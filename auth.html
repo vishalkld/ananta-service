@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Center Login</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f1f5f9;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px
+}
+.card{
+  width:100%;
+  max-width:430px;
+  background:white;
+  padding:28px;
+  border-radius:18px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12)
+}
+h1{text-align:center;margin:0 0 8px}
+.subtitle{text-align:center;color:#64748b;margin-bottom:25px}
+label{display:block;margin:13px 0 6px;font-weight:600}
+input{
+  width:100%;
+  padding:13px;
+  border:1px solid #cbd5e1;
+  border-radius:9px;
+  font-size:16px
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:18px;
+  border:0;
+  border-radius:9px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer
+}
+.primary{background:#2563eb;color:white}
+.secondary{background:#e2e8f0;color:#0f172a}
+.switch{
+  text-align:center;
+  margin-top:18px;
+  color:#2563eb;
+  cursor:pointer
+}
+.message{
+  margin-top:15px;
+  padding:10px;
+  border-radius:8px;
+  display:none;
+  text-align:center
+}
+.error{background:#fee2e2;color:#991b1b}
+.success{background:#dcfce7;color:#166534}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <!-- LOGIN -->
+  <div id="loginBox">
+    <h1>Service Center Login</h1>
+    <div class="subtitle">Login to your account</div>
+
+    <label>Email</label>
+    <input id="loginEmail" type="email" placeholder="Enter email">
+
+    <label>Password</label>
+    <input id="loginPassword" type="password" placeholder="Enter password">
+
+    <button class="primary" onclick="login()">Login</button>
+
+    <div id="loginMessage" class="message"></div>
+
+    <div class="switch" onclick="showSignup()">
+      Create New Service Center Account
+    </div>
+  </div>
+
+
+  <!-- CREATE ACCOUNT -->
+  <div id="signupBox" class="hidden">
+    <h1>Create Account</h1>
+    <div class="subtitle">Create your Service Center account</div>
+
+    <label>Service Center Name</label>
+    <input id="centerName" type="text" placeholder="Service Center Name">
+
+    <label>Owner Name</label>
+    <input id="ownerName" type="text" placeholder="Owner Name">
+
+    <label>Mobile</label>
+    <input id="phone" type="tel" placeholder="Mobile Number">
+
+    <label>Email</label>
+    <input id="signupEmail" type="email" placeholder="Email Address">
+
+    <label>Password</label>
+    <input id="signupPassword" type="password" placeholder="Minimum 6 characters">
+
+    <button class="primary" onclick="signup()">Create Account</button>
+
+    <div id="signupMessage" class="message"></div>
+
+    <div class="switch" onclick="showLogin()">
+      Already have an account? Login
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+"https://talzqxwoclrllbqudpkk.supabase.co";
+
+/*
+  IMPORTANT:
+  Yahan apni Supabase ANON / PUBLISHABLE KEY paste karein.
+  Service-role / secret key yahan kabhi na dalein.
+*/
+const SUPABASE_ANON_KEY =
+"sb_publishable_6H_DB7Z-5ygiX2hvMvQwZQ_ma-o-mQk";
+
+const supabaseClient =
+supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+// -------------------------
+// LOGIN
+// -------------------------
+
+async function login(){
+
+  const email =
+    document.getElementById("loginEmail").value.trim();
+
+  const password =
+    document.getElementById("loginPassword").value;
+
+  if(!email || !password){
+    showMessage(
+      "loginMessage",
+      "Email aur password enter karein.",
+      "error"
+    );
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+  if(error){
+    showMessage(
+      "loginMessage",
+      error.message,
+      "error"
+    );
+    return;
+  }
+
+  showMessage(
+    "loginMessage",
+    "Login successful. Opening application...",
+    "success"
+  );
+
+  setTimeout(() => {
+
+    window.location.href =
+      "index.html";
+
+  }, 1000);
+}
+
+
+// -------------------------
+// CREATE ACCOUNT
+// -------------------------
+
+async function signup(){
+
+  const centerName =
+    document.getElementById("centerName").value.trim();
+
+  const ownerName =
+    document.getElementById("ownerName").value.trim();
+
+  const phone =
+    document.getElementById("phone").value.trim();
+
+  const email =
+    document.getElementById("signupEmail").value.trim();
+
+  const password =
+    document.getElementById("signupPassword").value;
+
+  if(!centerName || !ownerName || !phone || !email || !password){
+
+    showMessage(
+      "signupMessage",
+      "Sabhi fields bharna zaroori hai.",
+      "error"
+    );
+
+    return;
+  }
+
+  if(password.length < 6){
+
+    showMessage(
+      "signupMessage",
+      "Password kam se kam 6 characters ka hona chahiye.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const { data, error } =
+    await supabaseClient.auth.signUp({
+
+      email: email,
+
+      password: password,
+
+      options: {
+        data: {
+          service_center_name: centerName,
+          owner_name: ownerName,
+          phone: phone
+        },
+
+        emailRedirectTo:
+          "https://vishalkld.github.io/ananta-service/"
+      }
+
+    });
+
+
+  if(error){
+
+    showMessage(
+      "signupMessage",
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  showMessage(
+    "signupMessage",
+    "Account create ho gaya. Email verify karein, phir Login karein.",
+    "success"
+  );
+
+}
+
+
+// -------------------------
+// SWITCH FORMS
+// -------------------------
+
+function showSignup(){
+
+  document.getElementById("loginBox")
+    .classList.add("hidden");
+
+  document.getElementById("signupBox")
+    .classList.remove("hidden");
+}
+
+
+function showLogin(){
+
+  document.getElementById("signupBox")
+    .classList.add("hidden");
+
+  document.getElementById("loginBox")
+    .classList.remove("hidden");
+}
+
+
+// -------------------------
+// MESSAGE
+// -------------------------
+
+function showMessage(id,text,type){
+
+  const box =
+    document.getElementById(id);
+
+  box.textContent = text;
+
+  box.className =
+    "message " + type;
+
+  box.style.display = "block";
+}
+
+</script>
+
+</body>
+</html>
