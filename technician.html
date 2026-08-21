@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2f5d4f">
+<title>Ananta Technician</title>
+<style>
+body{margin:0;background:#f4f6f4;color:#20352d;font-family:Arial,sans-serif}*{box-sizing:border-box}
+.wrap{max-width:950px;margin:auto;padding:14px}.card{background:#fff;border:1px solid #dce4df;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0001}
+h1{margin:0 0 4px;font-size:21px}h2{font-size:18px}label{display:block;font-weight:700;font-size:13px;margin:10px 0 5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd6d0;border-radius:8px;font:inherit;background:#fff}textarea{min-height:75px}
+button{border:0;border-radius:8px;padding:10px 13px;background:#2f5d4f;color:#fff;font-weight:700;cursor:pointer}.secondary{background:#e7eeea;color:#2f5d4f}.danger{background:#a43b32}
+.row{display:flex;gap:8px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat{background:#eef4f0;border-radius:10px;padding:12px;text-align:center}.stat b{font-size:22px;display:block}.stat span{font-size:11px}
+.tabs{display:flex;gap:7px;overflow:auto;margin:10px 0}.tab{white-space:nowrap}.tab.active{background:#173d31}
+.item{border:1px solid #dce4df;border-radius:9px;padding:12px;margin:8px 0}.muted{font-size:12px;color:#607069}.badge{display:inline-block;padding:4px 8px;border-radius:18px;background:#e7eeea;font-size:10px;font-weight:800}
+.error{color:#a43b32;font-weight:700}.hidden{display:none!important}.login{max-width:430px;margin:50px auto}.pill{background:#f1f5f2;padding:6px 9px;border-radius:20px;font-size:11px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.wrap{padding:10px}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+"use strict";
+var URL="https://talzqxwoclrllbqudpkk.supabase.co";
+var KEY="sb_publishable_6H_DB7Z-5ygiX2hvMvQwZQ_ma-o-mQk";
+var sb=null,user=null,meta={},technicianRecord=null,technicianDisplayName="",centerId="",centerName="",DATA={},lang=localStorage.getItem("ananta_tech_lang")||"en",tab="home";
+
+var TX={
+en:{chat:"Private Chat",send:"Send",message:"Message",noMessages:"No messages yet.",chatPlaceholder:"Write a private message...",login:"Technician Login",email:"Email",password:"Password",loginBtn:"Login",logout:"Logout",dashboard:"Dashboard",complaints:"My Complaints",stock:"My Stock",tracking:"Attendance & GPS",company:"Company",all:"All",product:"Product",model:"Model",part:"Spare Part",fresh:"Fresh",defective:"Defective",assigned:"Assigned",progress:"In Progress",closed:"Closed",start:"Start Job",consume:"Consume Spare",close:"Close Complaint",checkin:"Check In",checkout:"Check Out",gps:"Get GPS",customer:"Customer",mobile:"Mobile",address:"Address",complaint:"Complaint No.",ref:"Service Center Ref.",status:"Status",qty:"Quantity",photo:"Photo",remark:"Remark",save:"Save",no:"No records found.",success:"Saved successfully.",permission:"Location permission is required.",service:"Service Center"},
+hi:{chat:"प्राइवेट चैट",send:"भेजें",message:"मैसेज",noMessages:"अभी कोई मैसेज नहीं है।",chatPlaceholder:"प्राइवेट मैसेज लिखें...",login:"टेक्नीशियन लॉगिन",email:"ईमेल",password:"पासवर्ड",loginBtn:"लॉगिन",logout:"लॉगआउट",dashboard:"डैशबोर्ड",complaints:"मेरी शिकायतें",stock:"मेरा स्टॉक",tracking:"अटेंडेंस व GPS",company:"कंपनी",all:"सभी",product:"प्रोडक्ट",model:"मॉडल",part:"स्पेयर पार्ट",fresh:"Fresh स्टॉक",defective:"Defective स्टॉक",assigned:"आवंटित",progress:"काम जारी",closed:"बंद",start:"काम शुरू करें",consume:"स्पेयर उपयोग करें",close:"शिकायत बंद करें",checkin:"चेक-इन",checkout:"चेक-आउट",gps:"GPS लें",customer:"ग्राहक",mobile:"मोबाइल",address:"पता",complaint:"शिकायत नंबर",ref:"सर्विस सेंटर रेफ.",status:"स्थिति",qty:"मात्रा",photo:"फोटो",remark:"नोट",save:"सेव करें",no:"कोई रिकॉर्ड नहीं मिला।",success:"सफलतापूर्वक सेव हुआ।",permission:"Location permission जरूरी है।",service:"सर्विस सेंटर"}
+};
+function t(k){return (TX[lang]||TX.en)[k]||k}
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function id(){return "TX"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function toast(s){alert(s)}
+function loadLib(cb){
+ if(window.supabase&&window.supabase.createClient){cb(null);return}
+ var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+ s.onload=function(){cb(window.supabase&&window.supabase.createClient?null:new Error("Supabase library unavailable"))};
+ s.onerror=function(){cb(new Error("Supabase library load failed"))};document.head.appendChild(s)
+}
+function loginPage(msg){
+ document.getElementById("root").innerHTML='<div class="wrap"><div class="card login">'+
+ '<h1>Ananta Enterprises</h1><div class="muted">'+t("service")+'</div><h2>'+t("login")+'</h2>'+
+ '<label>'+t("email")+'</label><input id="email" type="email" autocomplete="username">'+
+ '<label>'+t("password")+'</label><input id="pass" type="password" autocomplete="current-password">'+
+ '<br><br><div class="row"><button onclick="doLogin()">'+t("loginBtn")+'</button><button class="secondary" onclick="switchLang()">'+(lang==="hi"?"English":"हिंदी")+'</button></div>'+
+ '<p id="err" class="error">'+esc(msg||"")+'</p></div></div>'
+}
+window.switchLang=function(){lang=lang==="hi"?"en":"hi";localStorage.setItem("ananta_tech_lang",lang);if(user)render();else loginPage("")};
+window.doLogin=function(){
+ var e=document.getElementById("email").value.trim(),p=document.getElementById("pass").value;
+ if(!e||!p){document.getElementById("err").textContent="Email और password required";return}
+ sb.auth.signInWithPassword({email:e,password:p}).then(function(r){if(r.error){document.getElementById("err").textContent=r.error.message;return}boot()})
+};
+window.logout=function(){sb.auth.signOut().then(function(){user=null;loginPage("")})};
+
+function boot(){
+ sb.auth.getSession().then(function(r){
+  if(!r.data.session){loginPage("");return}
+  user=r.data.session.user;meta=user.user_metadata||{};
+  var role=String(meta.role||(user.app_metadata||{}).role||"").toUpperCase();
+  if(role && role!=="TECHNICIAN"){loginPage("यह Technician account नहीं है.");sb.auth.signOut();return}
+  centerId=meta.service_center_id||(user.app_metadata||{}).service_center_id||"";
+  if(!centerId){
+   /* We will get the service_center_id from the technicians row below. */
+  }
+  sb.from("technicians").select("id,name,email,phone,technician_code,service_center_id,is_active").eq("auth_user_id",user.id).maybeSingle().then(function(tr){
+   if(tr.error){loginPage("Technician record नहीं मिला: "+tr.error.message);return}
+   if(!tr.data){loginPage("इस Supabase login का technician record नहीं मिला.");return}
+   technicianRecord=tr.data;
+   technicianDisplayName=tr.data.name||meta.technician_name||meta.name||user.email;
+   centerId=tr.data.service_center_id||centerId;
+   if(!centerId){loginPage("Technician के Service Center का link नहीं मिला.");return}
+   return sb.from("service_centers").select("id,name,service_center_code").eq("id",centerId).maybeSingle();
+  }).then(function(r){
+   if(!r)return;
+   if(r.error){loginPage("Service Center load error: "+r.error.message);return}
+   centerName=(r.data&&r.data.name)||"Service Center";
+   loadData().then(function(){startComplaintSync();render()}).catch(function(e){renderError(e.message)})
+  }).catch(function(e){loginPage(e.message)})
+ })
+}
+async function loadData(){
+ if(!user||!centerId)throw new Error("Technician/Service Center session not ready");
+
+ var r=await sb.from("app_data")
+  .select("data,updated_at")
+  .eq("service_center_id",centerId)
+  .limit(1)
+  .maybeSingle();
+
+ if(r.error)throw new Error("Database read failed: "+r.error.message);
+
+ DATA=(r.data&&r.data.data)||{};
+
+ DATA.complaints=Array.isArray(DATA.complaints)?DATA.complaints:[];
+ DATA.txns=Array.isArray(DATA.txns)?DATA.txns:[];
+ DATA.catalog=Array.isArray(DATA.catalog)?DATA.catalog:[];
+ DATA.companies=Array.isArray(DATA.companies)?DATA.companies:[];
+ DATA.technicians=Array.isArray(DATA.technicians)?DATA.technicians:[];
+ DATA.private_chats=Array.isArray(DATA.private_chats)?DATA.private_chats:[];
+ DATA.updated_at=(r.data&&r.data.updated_at)||null;
+
+ return DATA;
+}
+
+function mergeByUpdatedAt(serverArr, localArr){
+ var sm=new Map(), out=[];
+ (Array.isArray(serverArr)?serverArr:[]).forEach(function(x){if(x&&x.id!=null)sm.set(String(x.id),x);});
+ (Array.isArray(localArr)?localArr:[]).forEach(function(x){
+   if(!x||x.id==null){out.push(x);return}
+   var k=String(x.id), old=sm.get(k);
+   if(!old){sm.set(k,x);return}
+   var sd=new Date(old.updatedAt||old.updated_at||old.createdAt||old.created_at||0).getTime();
+   var ld=new Date(x.updatedAt||x.updated_at||x.createdAt||x.created_at||0).getTime();
+   if(ld>=sd)sm.set(k,x);
+ });
+ sm.forEach(function(x){out.push(x)});
+ return out;
+}
+function mergeTechnicianData(server, local){
+ server=server||{};local=local||{};
+ var merged=Object.assign({},server,local);
+ /* Complaints: union + newest updatedAt wins. This prevents a stale
+    technician snapshot from deleting a newly allocated complaint. */
+ merged.complaints=mergeByUpdatedAt(server.complaints,local.complaints);
+ /* Transactions/messages are append-only: union by id. */
+ merged.txns=mergeByUpdatedAt(server.txns,local.txns);
+ merged.private_chats=mergeByUpdatedAt(server.private_chats,local.private_chats);
+ /* Keep server catalog/companies/technicians as the source of truth. */
+ merged.catalog=Array.isArray(server.catalog)?server.catalog:(local.catalog||[]);
+ merged.companies=Array.isArray(server.companies)?server.companies:(local.companies||[]);
+ merged.technicians=Array.isArray(server.technicians)?server.technicians:(local.technicians||[]);
+ return merged;
+}
+async function saveData(){
+ var now=new Date().toISOString();
+
+ async function attemptSave(){
+  var latest=await sb.from("app_data")
+    .select("data,updated_at")
+    .eq("service_center_id",centerId)
+    .order("updated_at",{ascending:false})
+    .limit(1)
+    .maybeSingle();
+
+  if(latest.error)throw new Error("Database read before save failed: "+latest.error.message);
+  if(!latest.data)throw new Error("Service Center database record not found.");
+
+  var merged=mergeTechnicianData(latest.data.data,DATA);
+  merged.updated_at=now;
+
+  var q=sb.from("app_data")
+    .update({data:merged,updated_at:now})
+    .eq("service_center_id",centerId);
+
+  /* Optimistic concurrency: update the same server version we just read. */
+  if(latest.data.updated_at){
+    q=q.eq("updated_at",latest.data.updated_at);
+  }
+
+  var u=await q.select("service_center_id,updated_at");
+  if(u.error)throw new Error("Database update failed: "+u.error.message);
+
+  /* Zero rows means another user saved between our read and write. */
+  if(!u.data||!u.data.length)return false;
+
+  DATA=merged;
+  return true;
+ }
+
+ /* Retry once against the newest server snapshot on a write conflict. */
+ var ok=await attemptSave();
+ if(!ok)ok=await attemptSave();
+ if(!ok)throw new Error("Database changed while saving. Please press Refresh and try again.");
+ return true;
+}
+function techName(){return (technicianRecord&&technicianRecord.name)||technicianDisplayName||meta.technician_name||meta.name||user.email}
+function normalizeText(v){
+ return String(v==null?"":v).trim().replace(/\s+/g," ").toLowerCase();
+}
+function isMyComplaint(c){
+ var myId=String(user&&user.id||"").trim().toLowerCase();
+ var myTechId=String(technicianRecord&&technicianRecord.id||"").trim().toLowerCase();
+ var myCode=normalizeText(technicianRecord&&technicianRecord.technician_code||"");
+ var myName=normalizeText((technicianRecord&&technicianRecord.name)||techName());
+ var myEmail=normalizeText((technicianRecord&&technicianRecord.email)||(user&&user.email)||"");
+ var myPhone=normalizeText((technicianRecord&&technicianRecord.phone)||"");
+
+ function val(v){
+   if(v==null)return [];
+   if(typeof v==="object"){
+     return [
+       v.id,v.auth_user_id,v.user_id,v.technician_id,v.technicianId,
+       v.name,v.technician_name,v.code,v.technician_code,v.email,v.phone
+     ].filter(Boolean).map(function(x){return normalizeText(x)});
+   }
+   return [normalizeText(v)];
+ }
+
+ /* Match every common allocation ID field. */
+ var ids=[
+   c.technician_auth_user_id,c.technicianAuthUserId,
+   c.tech_auth_user_id,c.techAuthUserId,
+   c.auth_user_id,c.authUserId,
+   c.technician_user_id,c.technicianUserId,
+   c.technician_id,c.technicianId,c.tech_id,c.techId,
+   c.assigned_technician_id,c.assignedTechnicianId,
+   c.assigned_to_id,c.assignedToId,
+   c.allocated_to_id,c.allocatedToId
+ ].filter(Boolean).map(function(v){return String(v).trim().toLowerCase()});
+ if(myId && ids.indexOf(myId)>=0)return true;
+ if(myTechId && ids.indexOf(myTechId)>=0)return true;
+
+ /* Match every common allocation/name/code field, including object values. */
+ var fields=[
+   c.technician,c.technician_name,c.technicianName,
+   c.tech,c.tech_name,c.techName,
+   c.assigned_technician,c.assignedTechnician,
+   c.assigned_to,c.assignedTo,
+   c.allocated_to,c.allocatedTo,
+   c.allocated_technician,c.allocatedTechnician,
+   c.technician_code,c.technicianCode,
+   c.tech_code,c.techCode,
+   c.assigned_technician_code,c.assignedTechnicianCode
+ ];
+ var values=[];
+ fields.forEach(function(v){values=values.concat(val(v))});
+
+ var targets=[myName,myCode,myEmail,myPhone].filter(Boolean);
+ for(var i=0;i<targets.length;i++){
+   if(values.indexOf(targets[i])>=0)return true;
+ }
+
+ /* Some service-center versions store the allocation as an object. */
+ var objects=[c.technician,c.assigned_technician,c.assignedTechnician,c.assigned_to,c.assignedTo,c.allocated_to,c.allocatedTo];
+ for(var j=0;j<objects.length;j++){
+   var o=objects[j];
+   if(!o||typeof o!=="object")continue;
+   var oid=[o.id,o.auth_user_id,o.user_id,o.technician_id,o.technicianId].filter(Boolean).map(function(x){return String(x).trim().toLowerCase()});
+   if(myId&&oid.indexOf(myId)>=0)return true;
+   if(myTechId&&oid.indexOf(myTechId)>=0)return true;
+ }
+
+ return false;
+}
+function myComplaints(){
+ return DATA.complaints.filter(isMyComplaint);
+}
+function stockRows(){
+ var m={};
+ var myId=String(user&&user.id||"");
+ var myTechId=String(technicianRecord&&technicianRecord.id||"");
+ var myName=String(techName()||"").trim().toLowerCase();
+ var myCode=String(technicianRecord&&technicianRecord.technician_code||"").trim().toLowerCase();
+
+ function isMine(x){
+  var ids=[
+   x.tech_auth_user_id,x.technician_auth_user_id,x.technician_user_id,
+   x.tech_id,x.technician_id
+  ].filter(Boolean).map(String);
+  if(ids.length && (ids.indexOf(myId)>=0 || ids.indexOf(myTechId)>=0))return true;
+  var names=[
+   x.tech,x.technician,x.technician_name,x.tech_name,x.assigned_technician
+  ].filter(Boolean).map(function(v){return String(v).trim().toLowerCase()});
+  if(names.length && (names.indexOf(myName)>=0 || (myCode&&names.indexOf(myCode)>=0)))return true;
+  return !ids.length&&!names.length;
+ }
+ function typeOf(x){return String(x.type||x.transaction_type||x.txn_type||x.action||"").toLowerCase().replace(/[- ]/g,"_");}
+ function qtyOf(x){var q=Number(x.qty!=null?x.qty:(x.quantity!=null?x.quantity:0));return Number.isFinite(q)?q:0;}
+
+ DATA.txns.forEach(function(x){
+  if(!isMine(x))return;
+  var partNo=x.partNo||x.part_no||x.spare_part_no||x.part_number||"";
+  var partName=x.partName||x.part_name||x.spare_part_name||x.name||"";
+  var k=[x.company||"",x.product||"",x.model||"",partNo].join("|");
+  if(!m[k])m[k]={
+   company:x.company||"",product:x.product||"",model:x.model||"",
+   partNo:partNo,partName:partName,fresh:0,defective:0
+  };
+  var q=qtyOf(x), typ=typeOf(x);
+
+  /* Technician stock received/issued from Service Center. */
+  if(["issue","stock_issue","technician_issue","transfer_to_technician","transfer","allocate","allocated","received"].indexOf(typ)>=0){
+   m[k].fresh+=q;
+  }
+  /* Spare consumed on a complaint. */
+  if(["use","consume","consumed","used"].indexOf(typ)>=0){
+   m[k].fresh-=q;
+   m[k].defective+=q;
+  }
+  /* Defective returned by technician to Service Center. */
+  if(["collect","defective_return","return_to_service_center","return"].indexOf(typ)>=0){
+   m[k].defective-=q;
+  }
+ });
+ return Object.values(m).filter(function(x){return x.fresh>0||x.defective>0});
+}
+
+window.refreshAppData=function(){
+ var btn=document.getElementById("refreshBtn");
+ if(btn){btn.disabled=true;btn.textContent="⟳ Loading...";}
+ loadData().then(function(){
+   startComplaintSync();
+   render();
+ }).catch(function(e){
+   toast("Refresh failed: "+e.message);
+   render();
+ }).finally(function(){
+   var b=document.getElementById("refreshBtn");
+   if(b){b.disabled=false;b.textContent="↻ Refresh";}
+ });
+};
+
+
+var complaintSyncTimer=null;
+var complaintRealtimeChannel=null;
+function startComplaintSync(){
+ try{
+   if(complaintRealtimeChannel)sb.removeChannel(complaintRealtimeChannel);
+   complaintRealtimeChannel=sb.channel("tech-complaints-"+centerId)
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"app_data",filter:"service_center_id=eq."+centerId},
+      function(){loadData().then(function(){render()}).catch(function(){})})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"app_data",filter:"service_center_id=eq."+centerId},
+      function(){loadData().then(function(){render()}).catch(function(){})})
+    .subscribe();
+ }catch(e){}
+ if(complaintSyncTimer)clearInterval(complaintSyncTimer);
+ complaintSyncTimer=setInterval(function(){
+   if(document.hidden)return;
+   loadData().then(function(){render()}).catch(function(){});
+ },5000);
+}
+
+function render(){
+ var cs=myComplaints(),st=stockRows();
+ document.getElementById("root").innerHTML=
+ '<div style="background:#2f5d4f;color:white"><div class="wrap"><div class="row" style="justify-content:space-between;align-items:center">'+
+ '<div><h1>Ananta Technician</h1><div class="muted" style="color:#e5eee9">'+esc(centerName)+'</div></div>'+
+ '<div class="row"><button id="refreshBtn" class="secondary" onclick="refreshAppData()">↻ Refresh</button><button class="secondary" onclick="switchLang()">'+(lang==="hi"?"English":"हिंदी")+'</button><button class="danger" onclick="logout()">'+t("logout")+'</button></div></div></div></div>'+
+ '<main class="wrap"><div class="tabs row">'+
+ '<button class="tab '+(tab==="home"?"active":"")+'" onclick="setTab(\'home\')">'+t("dashboard")+'</button>'+
+ '<button class="tab '+(tab==="complaints"?"active":"")+'" onclick="setTab(\'complaints\')">'+t("complaints")+'</button>'+
+ '<button class="tab '+(tab==="stock"?"active":"")+'" onclick="setTab(\'stock\')">'+t("stock")+'</button>'+
+ '<button class="tab '+(tab==="tracking"?"active":"")+'" onclick="setTab(\'tracking\')">'+t("tracking")+'</button></div>'+
+ (tab==="home"?home(cs,st):tab==="complaints"?complaints(cs):tab==="stock"?stock(st):chat())+'</main>'
+}
+function setTab(x){tab=x;render()}
+window.setTab=setTab;
+function home(cs,st){
+ var a=cs.filter(c=>c.status==="ASSIGNED").length,p=cs.filter(c=>c.status==="IN PROGRESS").length,c=cs.filter(c=>c.status==="CLOSED").length;
+ return '<div class="card"><h2>'+t("dashboard")+'</h2><div class="grid"><div class="stat"><b>'+a+'</b><span>'+t("assigned")+'</span></div><div class="stat"><b>'+p+'</b><span>'+t("progress")+'</span></div><div class="stat"><b>'+c+'</b><span>'+t("closed")+'</span></div></div></div>'+
+ '<div class="card"><h2>'+t("complaints")+'</h2>'+companyComplaintList(cs)+'</div>'+
+ '<div class="card"><h2>'+t("stock")+'</h2>'+stockTable(st)+'</div>'
+}
+function companySelect(list,idv){
+ var companies=[];list.forEach(function(x){if(x.company&&companies.indexOf(x.company)<0)companies.push(x.company)});
+ return '<select id="'+idv+'" onchange="filterCompany(this.value)"><option value="">'+t("all")+'</option>'+companies.map(x=>'<option>'+esc(x)+'</option>').join("")+'</select>'
+}
+var selectedCompany="";
+window.filterCompany=function(v){selectedCompany=v;applyComplaintFilters()};
+
+function complaintDate(c,mode){
+ var v="";
+ if(mode==="closed") v=c.closedAt||c.closed_at||c.closeDate||c.closed_date||"";
+ else v=c.allocatedAt||c.assignedAt||c.allocated_at||c.assigned_at||c.createdAt||c.created_at||"";
+ return v?String(v).slice(0,10):"";
+}
+function dateRangeMatch(c,mode,from,to){
+ if(mode==="all")return true;
+ var d=complaintDate(c,mode);
+ if(!d)return false;
+ if(from&&d<from)return false;
+ if(to&&d>to)return false;
+ return true;
+}
+window.applyComplaintFilters=function(){
+ var mode=document.getElementById("complaintDateMode");
+ var from=document.getElementById("complaintFrom");
+ var to=document.getElementById("complaintTo");
+ if(!mode||!from||!to)return;
+ var cs=myComplaints();
+ if(selectedCompany)cs=cs.filter(function(c){return c.company===selectedCompany});
+ cs=cs.filter(function(c){return dateRangeMatch(c,mode.value,from.value,to.value)});
+ var box=document.getElementById("complaintList");
+ if(box)box.innerHTML=companyComplaintList(cs);
+};
+window.clearComplaintDate=function(){
+ var m=document.getElementById("complaintDateMode"),f=document.getElementById("complaintFrom"),to=document.getElementById("complaintTo");
+ if(m)m.value="all";if(f)f.value="";if(to)to.value="";
+ applyComplaintFilters();
+};
+
+
+window.applyComplaintFilters=function(){
+ var mode=document.getElementById("complaintDateMode");
+ var from=document.getElementById("complaintFrom");
+ var to=document.getElementById("complaintTo");
+ var status=document.getElementById("complaintStatus");
+ if(!mode||!from||!to||!status)return;
+ var cs=myComplaints();
+ if(selectedCompany)cs=cs.filter(function(c){return c.company===selectedCompany});
+ var sv=status.value;
+ if(sv==="OPEN")cs=cs.filter(function(c){return ["ASSIGNED","OPEN"].indexOf(String(c.status||"").toUpperCase())>=0});
+ else if(sv && sv!=="all")cs=cs.filter(function(c){return String(c.status||"").toUpperCase()===sv});
+ cs=cs.filter(function(c){return dateRangeMatch(c,mode.value,from.value,to.value)});
+ var box=document.getElementById("complaintList");
+ if(box)box.innerHTML=companyComplaintList(cs);
+ var summary=document.getElementById("activeComplaintFilter");
+ if(summary){
+   var statusText=status.options[status.selectedIndex].text;
+   var modeText=mode.options[mode.selectedIndex].text;
+   var dates=(from.value||to.value)?(" | "+(from.value||"Any")+" → "+(to.value||"Any")):"";
+   summary.textContent="Filter: "+statusText+" | "+modeText+dates+(selectedCompany?" | "+selectedCompany:"");
+ }
+};
+window.clearComplaintFilters=function(){
+ var ids=["complaintStatus","complaintDateMode","complaintFrom","complaintTo"];
+ ids.forEach(function(x){var e=document.getElementById(x);if(e)e.value=(x==="complaintStatus"||x==="complaintDateMode")?"all":""});
+ selectedCompany="";
+ render();
+};
+
+function complaints(cs){
+ var filtered=selectedCompany?cs.filter(function(c){return c.company===selectedCompany}):cs;
+ return '<div class="card"><h2>'+t("complaints")+'</h2>'+
+ '<label>'+t("company")+'</label>'+companySelect(cs,"complaintCompany")+
+ '<div class="grid" style="margin-top:10px">'+
+ '<div><label>Status</label><select id="complaintStatus" onchange="applyComplaintFilters()">'+
+ '<option value="all">All Complaints</option>'+
+ '<option value="OPEN">Open / Assigned</option>'+
+ '<option value="IN PROGRESS">In Progress</option>'+
+ '<option value="CLOSED">Closed</option>'+
+ '<option value="CANCELLED">Cancelled</option></select></div>'+
+ '<div><label>Date Type</label><select id="complaintDateMode" onchange="applyComplaintFilters()">'+
+ '<option value="all">All Dates</option>'+
+ '<option value="allocated">Allocated / Assigned Date</option>'+
+ '<option value="closed">Closed Date</option></select></div>'+
+ '<div><label>From Date</label><input id="complaintFrom" type="date" onchange="applyComplaintFilters()"></div>'+
+ '<div><label>To Date</label><input id="complaintTo" type="date" onchange="applyComplaintFilters()"></div>'+
+ '</div>'+
+ '<div class="row" style="margin-top:8px"><button class="secondary" onclick="clearComplaintFilters()">Clear Filters</button></div>'+
+ '<div id="activeComplaintFilter" class="muted" style="margin-top:8px">Filter: All Complaints</div>'+
+ '<div id="complaintList">'+companyComplaintList(filtered)+'</div></div>';
+}
+
+function companyComplaintList(cs){
+ if(!cs.length)return '<p class="muted">'+t("no")+'</p>';
+ var groups={};cs.forEach(function(c){(groups[c.company||"Other"]||(groups[c.company||"Other"]=[])).push(c)});
+ return Object.keys(groups).map(function(g){
+  return '<div class="item"><b>'+esc(g)+'</b>'+groups[g].map(function(c){return '<div class="item"><div class="row" style="justify-content:space-between;align-items:center"><div><b>'+esc(c.companyComplaintNo||t("complaint"))+'</b> <span class="badge">'+esc(c.status||"ASSIGNED")+'</span></div><button class="secondary" onclick="viewComplaint(\''+esc(c.id)+'\')">View Complaint</button></div>'+
+  '<p>'+t("customer")+': '+esc(c.customer||"")+' · '+esc(c.mobile||"")+'</p><p>'+t("product")+': '+esc(c.product||"")+' · '+t("model")+': '+esc(c.model||"")+'</p><p>'+t("ref")+': '+esc(c.serviceCenterRef||"")+'</p>'+
+  '<div class="row">'+(c.status==="ASSIGNED"?'<button onclick="startJob(\''+esc(c.id)+'\')">'+t("start")+'</button>':"")+(c.status!=="CLOSED"&&c.status!=="CANCELLED"?'<button class="secondary" onclick="consume(\''+esc(c.id)+'\')">'+t("consume")+'</button><button onclick="closeJob(\''+esc(c.id)+'\')">'+t("close")+'</button>':"")+'</div></div>'}).join("")+'</div>'
+ }).join("")
+}
+
+function complaintDetailValue(c, keys){
+ for(var i=0;i<keys.length;i++) if(c[keys[i]]!==undefined && c[keys[i]]!==null && String(c[keys[i]]).trim()!=="") return c[keys[i]];
+ return "";
+}
+function attachmentItems(c){
+ var arr=[];
+ var candidates=[c.attachments,c.attachment,c.photos,c.files,c.complaintAttachments,c.documents];
+ candidates.forEach(function(v){if(Array.isArray(v))v.forEach(function(x){arr.push(x)});else if(v)arr.push(v)});
+ if(!arr.length)return '<p class="muted">No attachments.</p>';
+ return arr.map(function(a,i){
+  if(typeof a==='string') return '<div class="item">📎 <a href="'+esc(a)+'" target="_blank" rel="noopener">Attachment '+(i+1)+'</a></div>';
+  var name=a.name||a.file_name||a.filename||('Attachment '+(i+1));
+  var data=a.data||a.url||a.publicUrl||a.public_url||a.path||"";
+  var type=a.type||a.mime_type||"";
+  var link=data;
+  if(link && /^data:image\//i.test(link)) return '<div class="item"><b>📷 '+esc(name)+'</b><br><img src="'+link+'" style="max-width:100%;max-height:260px;border-radius:8px;margin-top:7px"></div>';
+  return link ? '<div class="item">📎 <a href="'+esc(link)+'" target="_blank" rel="noopener">'+esc(name)+'</a> <span class="muted">'+esc(type)+'</span></div>' : '<div class="item">📎 '+esc(name)+'</div>';
+ }).join("");
+}
+window.viewComplaint=function(cid){
+ var c=DATA.complaints.find(function(x){return String(x.id)===String(cid)});if(!c){toast("Complaint not found");return}
+ var old=document.getElementById("viewComplaintModal");if(old)old.remove();
+ var modal=document.createElement("div");modal.id="viewComplaintModal";modal.style="position:fixed;inset:0;background:#0008;z-index:60;display:flex;align-items:center;justify-content:center;padding:12px";
+ var assigned=complaintDetailValue(c,["technician","assigned_technician","technician_name"]);
+ var address=complaintDetailValue(c,["customerAddress","customer_address","address","customer_address_line"]);
+ var issue=complaintDetailValue(c,["complaintReason","reason","issue","problem","description","complaint_description"]);
+ var allocatedModel=complaintDetailValue(c,["model","modelNo","model_no","allocated_model"]);
+ var product=complaintDetailValue(c,["product","productName","product_name"]);
+ var company=complaintDetailValue(c,["company","companyName","company_name"]);
+ var allKeys=Object.keys(c).filter(function(k){return !["id","attachments","attachment","photos","files","complaintAttachments","documents","data"].includes(k) && typeof c[k]!=="object" && c[k]!==null && String(c[k]).trim()!=="";});
+ modal.innerHTML='<div class="card" style="width:100%;max-width:650px;max-height:92vh;overflow:auto"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">View Complaint</h2><button class="secondary" id="viewClose">×</button></div>'+ 
+ '<div class="item"><b>Complaint No.</b><p>'+esc(c.companyComplaintNo||c.complaintNo||c.complaint_number||"")+'</p><b>Status</b><p><span class="badge">'+esc(c.status||"")+'</span></p><b>Company</b><p>'+esc(company)+'</p><b>Product</b><p>'+esc(product)+'</p><b>Model</b><p>'+esc(allocatedModel)+'</p><b>Customer</b><p>'+esc(c.customer||c.customerName||"")+'</p><b>Mobile</b><p>'+esc(c.mobile||c.phone||c.customerMobile||"")+'</p><b>Address</b><p>'+esc(address||"—")+'</p><b>Complaint / Problem</b><p>'+esc(issue||"—")+'</p><b>Service Center Ref.</b><p>'+esc(c.serviceCenterRef||c.service_center_ref||"")+'</p><b>Assigned Technician</b><p>'+esc(assigned||techName())+'</p></div>'+ 
+ '<div class="item"><b>Attachments / Documents</b>'+attachmentItems(c)+'</div>'+ 
+ (allKeys.length?'<details class="item"><summary><b>Other complaint details</b></summary>'+allKeys.map(function(k){return '<p><b>'+esc(k.replace(/_/g,' '))+':</b> '+esc(c[k])+'</p>'}).join('')+'</details>':'')+
+ '<button class="secondary" id="viewClose2">Close</button></div>';
+ document.body.appendChild(modal);document.getElementById("viewClose").onclick=function(){modal.remove()};document.getElementById("viewClose2").onclick=function(){modal.remove()};
+};
+function stock(st){
+ var companies=[];st.forEach(x=>{if(x.company&&companies.indexOf(x.company)<0)companies.push(x.company)});
+ return '<div class="card"><h2>'+t("stock")+'</h2><label>'+t("company")+'</label><select id="sf" onchange="stockFilter()"><option value="">'+t("all")+'</option>'+companies.map(x=>'<option>'+esc(x)+'</option>').join("")+'</select>'+
+ '<div class="grid" style="margin-top:10px"><div><label>'+t("product")+'</label><select id="sp" onchange="stockFilter()"><option value="">'+t("all")+'</option></select></div><div><label>'+t("model")+'</label><select id="sm" onchange="stockFilter()"><option value="">'+t("all")+'</option></select></div><div><label>'+t("part")+'</label><input id="sq" oninput="stockFilter()" placeholder="'+t("part")+'"></div></div>'+
+ '<div id="stockList" style="margin-top:10px">'+stockTable(st)+'</div></div>'
+}
+window.stockFilter=function(){
+ var st=stockRows();
+ var co=document.getElementById("sf").value;
+ var pr=document.getElementById("sp").value;
+ var mo=document.getElementById("sm").value;
+ var q=document.getElementById("sq").value.toLowerCase();
+
+ var f=st.filter(function(x){
+  return (!co||String(x.company)===String(co)) &&
+         (!pr||String(x.product)===String(pr)) &&
+         (!mo||String(x.model)===String(mo)) &&
+         (!q||(String(x.partNo||"")+" "+String(x.partName||"")).toLowerCase().indexOf(q)>=0);
+ });
+ document.getElementById("stockList").innerHTML=stockTable(f);
+
+ var products=[],models=[];
+ st.forEach(function(x){
+  if((!co||String(x.company)===String(co))&&x.product&&products.indexOf(x.product)<0)products.push(x.product);
+  if((!co||String(x.company)===String(co))&&(!pr||String(x.product)===String(pr))&&x.model&&models.indexOf(x.model)<0)models.push(x.model);
+ });
+
+ var productStillExists=products.indexOf(pr)>=0;
+ document.getElementById("sp").innerHTML='<option value="">'+t("all")+'</option>'+
+   products.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join("");
+ document.getElementById("sp").value=productStillExists?pr:"";
+
+ var modelStillExists=models.indexOf(mo)>=0;
+ document.getElementById("sm").innerHTML='<option value="">'+t("all")+'</option>'+
+   models.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join("");
+ document.getElementById("sm").value=modelStillExists?mo:"";
+
+ /* Re-render using the values that are actually selected. */
+ var pr2=document.getElementById("sp").value, mo2=document.getElementById("sm").value;
+ var f2=st.filter(function(x){
+  return (!co||String(x.company)===String(co)) &&
+         (!pr2||String(x.product)===String(pr2)) &&
+         (!mo2||String(x.model)===String(mo2)) &&
+         (!q||(String(x.partNo||"")+" "+String(x.partName||"")).toLowerCase().indexOf(q)>=0);
+ });
+ document.getElementById("stockList").innerHTML=stockTable(f2);
+};
+function stockTable(st){
+ if(!st.length)return '<p class="muted">'+t("no")+'</p>';
+ var groups={};st.forEach(function(x){(groups[x.company]||(groups[x.company]=[])).push(x)});
+ return Object.keys(groups).map(function(g){return '<div class="item"><b>'+esc(g)+'</b>'+groups[g].map(function(x){
+  return '<div class="item"><b>'+esc(x.product)+' · '+esc(x.model)+'</b><p>'+esc(x.partNo)+' — '+esc(x.partName)+'</p><span class="pill">'+t("fresh")+': '+x.fresh+'</span> <span class="pill">'+t("defective")+': '+x.defective+'</span></div>'
+ }).join("")+'</div>'}).join("")
+}
+
+function chat(){
+ var msgs=Array.isArray(DATA.private_chats)?DATA.private_chats:[];
+ var mine=msgs.filter(function(m){return m.service_center_id===centerId&&(m.technician_auth_user_id===user.id||m.sender_auth_user_id===user.id||m.recipient_auth_user_id===user.id)});
+ return '<div class="card"><h2>💬 '+t("chat")+'</h2><div style="max-height:55vh;overflow:auto">'+
+ (mine.length?mine.map(function(m){var me=(m.sender_auth_user_id||m.auth_user_id)===user.id;return '<div class="item" style="margin-left:'+(me?"15%":"0")+';background:'+(me?"#eef4f0":"#fff")+'"><b>'+esc(me?"You":"Service Center")+'</b><p>'+esc(m.message||"")+'</p><span class="muted">'+esc(m.created_at||"")+'</span></div>'}).join(""):'<p class="muted">'+t("noMessages")+'</p>')+
+ '</div><label>'+t("message")+'</label><textarea id="chatMsg" placeholder="'+t("chatPlaceholder")+'"></textarea><br><button onclick="sendChat()">'+t("send")+'</button></div>';
+}
+window.sendChat=function(){
+ var box=document.getElementById("chatMsg"),message=(box?box.value:"").trim();if(!message)return;
+ DATA.private_chats=Array.isArray(DATA.private_chats)?DATA.private_chats:[];
+ DATA.private_chats.push({id:id(),service_center_id:centerId,technician_auth_user_id:user.id,sender_auth_user_id:user.id,sender_type:"TECHNICIAN",message:message,created_at:new Date().toISOString(),read_by_service_center:false});
+ saveData().then(function(){toast(t("success"));render()}).catch(function(e){toast(e.message)});
+};
+
+function tracking(){
+ return '<div class="card"><h2>'+t("tracking")+'</h2><p class="muted">'+t("checkin")+' / '+t("checkout")+' के समय GPS location save होगी। Complaint Start/Close पर भी location save होगी।</p><div class="row"><button onclick="gpsAction(\'CHECK_IN\')">'+t("checkin")+'</button><button class="secondary" onclick="gpsAction(\'GET_GPS\')">'+t("gps")+'</button><button class="danger" onclick="gpsAction(\'CHECK_OUT\')">'+t("checkout")+'</button></div><div id="gpsResult" class="item">—</div></div>'
+}
+function saveLocation(type,complaintId){
+ return new Promise(function(resolve,reject){
+  if(!navigator.geolocation){reject(new Error("GPS supported नहीं है"));return}
+  navigator.geolocation.getCurrentPosition(function(pos){
+   var x={id:id(),type:type,technician:techName(),auth_user_id:user.id,service_center_id:centerId,latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy,timestamp:new Date().toISOString(),complaint_id:complaintId||null};
+   DATA.gps_logs=Array.isArray(DATA.gps_logs)?DATA.gps_logs:[];DATA.gps_logs.push(x);
+   saveData().then(function(){resolve(x)}).catch(reject);
+  },function(e){reject(new Error(t("permission")+" "+e.message)),{enableHighAccuracy:true,timeout:15000,maximumAge:0}})
+ })
+}
+window.gpsAction=function(type){ return; };
+
+window.startJob=function(cid){
+ var c=DATA.complaints.find(function(x){return String(x.id)===String(cid)});
+ if(!c){toast("Complaint not found");return}
+ var status=String(c.status||"").toUpperCase();
+ if(status==="CLOSED"){toast("Complaint already closed");return}
+ if(status==="CANCELLED"){toast("Cancelled complaint cannot be started");return}
+ sb.auth.getSession().then(function(sr){
+  if(sr.error||!sr.data.session)throw new Error("Login session expire ho gaya");
+  return fetch(URL+"/functions/v1/manage-complaint-sync",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","Authorization":"Bearer "+sr.data.session.access_token},
+   body:JSON.stringify({action:"start",complaint_id:c.id,startedAt:new Date().toISOString()})
+  });
+ }).then(function(r){
+  return r.text().then(function(text){
+   var x={};try{x=text?JSON.parse(text):{}}catch(_){}
+   if(!r.ok||!x.success)throw new Error(x.error||x.message||text||("HTTP "+r.status));
+   return x;
+  });
+ }).then(function(){
+  return loadData();
+ }).then(function(){
+  var saved=DATA.complaints.find(function(x){return String(x.id)===String(cid)});
+  if(!saved||String(saved.status||"").toUpperCase()!=="IN PROGRESS")
+    throw new Error("Job status was not saved in database.");
+  toast(lang==="hi"?"काम शुरू हो गया।":"Job started successfully.");
+  render();
+ }).catch(function(e){
+  toast("Job start failed: "+e.message);
+  loadData().then(render).catch(function(){});
+ });
+};
+
+
+window.closeJob=function(cid){
+ var c=DATA.complaints.find(function(x){return String(x.id)===String(cid)});if(!c){toast("Complaint not found");return}
+ var old=document.getElementById("closeModal");if(old)old.remove();
+ var modal=document.createElement("div");modal.id="closeModal";modal.style="position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:center;justify-content:center;padding:14px";
+ modal.innerHTML='<div class="card" style="width:100%;max-width:520px;max-height:90vh;overflow:auto">'+
+ '<h2>'+t("close")+'</h2><p><b>'+esc(c.companyComplaintNo||"")+'</b> · '+esc(c.customer||"")+'</p>'+ 
+ '<label>Closing Attachments / फोटो व फाइलें</label>'+ 
+ '<div id="closingAttachmentRows"></div>'+ 
+ '<button type="button" class="secondary" id="addAttachment">+ Add Attachment / फाइल जोड़ें</button>'+ 
+ '<p class="muted">Maximum 8 attachments. प्रत्येक attachment अलग से चुन सकते हैं।</p>'+ 
+ '<label>'+t("remark")+' / Remarks</label><textarea id="closeRemark" placeholder="'+t("remark")+'"></textarea><br>'+ 
+ '<div class="row"><button id="saveClose">'+t("save")+'</button><button class="secondary" id="cancelClose">Cancel</button></div>'+ 
+ '<p id="closeErr" class="error"></p></div>';
+ document.body.appendChild(modal);
+ var rows=document.getElementById("closingAttachmentRows");
+ function addRow(){
+  if(rows.children.length>=8){toast("Maximum 8 attachments allowed.");return}
+  var row=document.createElement("div");row.className="row";row.style="margin:7px 0;align-items:center";
+  row.innerHTML='<input class="closingFile" type="file" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="flex:1"><button type="button" class="danger removeAttachment">×</button>';
+  row.querySelector(".removeAttachment").onclick=function(){row.remove()};rows.appendChild(row);
+ }
+ addRow();document.getElementById("addAttachment").onclick=addRow;
+ document.getElementById("cancelClose").onclick=function(){modal.remove()};document.getElementById("saveClose").onclick=function(){saveClosing(cid)};
+};
+
+function readAttachment(file){
+ return new Promise(function(resolve,reject){
+  if(file.size>5*1024*1024){reject(new Error(file.name+" is larger than 5 MB."));return}
+  var r=new FileReader();
+  r.onload=function(){resolve({
+   id:id(),name:file.name,data:r.result,
+   type:file.type||"application/octet-stream",
+   size:file.size,uploadedAt:new Date().toISOString()
+  })};
+  r.onerror=function(){reject(new Error("Could not read "+file.name))};
+  r.readAsDataURL(file);
+ });
+}
+
+async function saveClosing(cid){
+ var c=DATA.complaints.find(function(x){return String(x.id)===String(cid)});if(!c)return;
+ var errBox=document.getElementById("closeErr");
+ try{
+  var remark=document.getElementById("closeRemark").value.trim();
+  var files=Array.from(document.querySelectorAll("#closingAttachmentRows .closingFile")).map(function(el){return el.files&&el.files[0]?el.files[0]:null}).filter(Boolean);
+  if(files.length>8)throw new Error("Maximum 8 attachments allowed.");
+  var attachments=files.length?await Promise.all(files.map(readAttachment)):[];
+  var sr=await sb.auth.getSession();if(sr.error||!sr.data.session)throw new Error("Login session expire ho gaya");
+  var r=await fetch(URL+"/functions/v1/manage-complaint-sync",{
+   method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+sr.data.session.access_token},
+   body:JSON.stringify({action:"close",complaint_id:c.id,closeRemark:remark,closedAt:new Date().toISOString(),attachments})
+  });
+  var text=await r.text();let result={};try{result=text?JSON.parse(text):{}}catch(_){}
+  if(!r.ok||!result.success)throw new Error(result.error||result.message||text||("HTTP "+r.status));
+  await loadData();
+  var saved=DATA.complaints.find(function(x){return String(x.id)===String(cid)});
+  if(!saved||String(saved.status).toUpperCase()!=="CLOSED")throw new Error("Complaint close database me save nahi hua.");
+  var m=document.getElementById("closeModal");if(m)m.remove();toast(t("success"));render();
+ }catch(e){if(errBox)errBox.textContent="Save failed: "+e.message;}
+}
+
+window.consume=function(cid){
+ var c=DATA.complaints.find(function(x){return String(x.id)===String(cid)});
+ if(!c){toast("Complaint not found");return}
+ if(["CLOSED","CANCELLED"].indexOf(String(c.status||"").toUpperCase())>=0){
+   toast("Complaint already closed/cancelled.");return;
+ }
+
+ var company=String(c.company||c.companyName||c.company_name||"").trim().toLowerCase();
+ var all=stockRows().filter(function(x){
+   return Number(x.fresh)>0 &&
+     (!company||String(x.company||"").trim().toLowerCase()===company);
+ });
+
+ if(!all.length){
+   toast("इस company का technician fresh stock उपलब्ध नहीं है।");
+   return;
+ }
+
+ var modal=document.getElementById("consumeModal");
+ if(modal)modal.remove();
+
+ modal=document.createElement("div");
+ modal.id="consumeModal";
+ modal.style="position:fixed;inset:0;background:#0008;z-index:55;display:flex;align-items:center;justify-content:center;padding:14px";
+ modal.innerHTML='<div class="card" style="width:100%;max-width:520px">'+
+ '<h2>'+t("consume")+'</h2>'+
+ '<p><b>'+esc(c.companyComplaintNo||"")+'</b> · '+esc(c.customer||"")+'</p>'+
+ '<label>Spare Part / स्पेयर पार्ट</label>'+
+ '<select id="directConsumePart">'+all.map(function(x,i){
+   return '<option value="'+i+'">'+esc(x.partNo)+" — "+esc(x.partName)+" ("+x.fresh+")</option>";
+ }).join("")+'</select>'+
+ '<label>'+t("qty")+'</label>'+
+ '<input id="directConsumeQty" type="number" min="1" value="1">'+
+ '<label>'+t("remark")+'</label>'+
+ '<textarea id="directConsumeRemark"></textarea>'+
+ '<div class="row"><button id="directConsumeSave">'+t("save")+'</button>'+
+ '<button class="secondary" id="directConsumeCancel">Cancel</button></div>'+
+ '<p id="directConsumeError" class="error"></p></div>';
+
+ document.body.appendChild(modal);
+
+ document.getElementById("directConsumeCancel").onclick=function(){modal.remove()};
+
+ document.getElementById("directConsumeSave").onclick=async function(){
+   var er=document.getElementById("directConsumeError");
+   try{
+     await loadData();
+
+     var p=stockRows().filter(function(x){
+       return Number(x.fresh)>0 &&
+        (!company||String(x.company||"").trim().toLowerCase()===company);
+     })[Number(document.getElementById("directConsumePart").value)];
+
+     var q=Number(document.getElementById("directConsumeQty").value);
+     var remark=document.getElementById("directConsumeRemark").value.trim();
+
+     if(!p)throw new Error("Spare part select करें.");
+     if(!Number.isInteger(q)||q<1||q>Number(p.fresh))
+       throw new Error("Invalid quantity. Available: "+p.fresh);
+
+     DATA.txns=Array.isArray(DATA.txns)?DATA.txns:[];
+
+     DATA.txns.push({
+       id:id(),
+       type:"use",
+       date:new Date().toISOString().slice(0,10),
+       company:p.company||"",
+       product:p.product||"",
+       model:p.model||"",
+       partNo:p.partNo||"",
+       partName:p.partName||"",
+       qty:q,
+       tech:techName(),
+       technician_name:techName(),
+       technician_id:technicianRecord&&technicianRecord.id||null,
+       tech_auth_user_id:user.id,
+       technician_auth_user_id:user.id,
+       service_center_id:centerId,
+       complaint:c.companyComplaintNo||"",
+       complaint_id:c.id,
+       customer:c.customer||"",
+       remarks:remark,
+       createdAt:new Date().toISOString()
+     });
+
+     c.status="IN PROGRESS";
+     c.updatedAt=new Date().toISOString();
+
+     await saveData();
+     await loadData();
+
+     modal.remove();
+     toast(t("success"));
+     render();
+   }catch(e){
+     if(er)er.textContent="Consume failed: "+e.message;
+   }
+ };
+};
+
+
+function renderError(m){document.getElementById("root").innerHTML='<div class="wrap"><div class="card"><h2>Error</h2><p class="error">'+esc(m)+'</p><button onclick="location.reload()">Reload</button></div></div>'}
+start();
+function start(){loadLib(function(e){if(e){loginPage(e.message);return}sb=window.supabase.createClient(URL,KEY);sb.auth.getSession().then(function(r){if(r.data&&r.data.session){boot()}else loginPage("")})})}
+})();
+</script>
+</body>
+</html>
