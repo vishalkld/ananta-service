@@ -18,9 +18,6 @@ button:disabled{opacity:.6}.role{display:grid;grid-template-columns:1fr 1fr;gap:
 <div class="rowline"><button type="button" id="forgotLink" class="linkbtn" onclick="openForgotPassword(event)">Forgot Password?</button></div><p id="techResetNote" class="muted hidden" style="text-align:right;margin:4px 0 0">Technician password Service Center se reset hoga.</p>
 <br><br><button id="loginBtn" style="width:100%">Login</button>
 </div>
-<div id="registerBox"><hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0"><h3>New Service Center</h3>
-<label>Service Center Name</label><input id="regCenter"><label>Registration Email</label><input id="regEmail" type="email"><label>Password</label><div class="pw"><input id="regPassword" type="password" autocomplete="new-password"><button type="button" class="eye" onclick="togglePw('regPassword',this)">👁</button></div><br><br>
-<button id="regBtn" style="width:100%">Register Service Center</button></div>
 <div id="forgotBox" class="hidden">
 <hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0">
 <h3>Reset Password</h3>
@@ -29,7 +26,6 @@ button:disabled{opacity:.6}.role{display:grid;grid-template-columns:1fr 1fr;gap:
 <br><br><button id="forgotBtn" style="width:100%">Send Reset Link</button>
 <div class="rowline"><button type="button" id="backLoginBtn" class="linkbtn">Back to Login</button></div>
 </div>
-
 <div id="newPasswordBox" class="hidden">
 <hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0">
 <h3>Set New Password</h3>
@@ -66,7 +62,6 @@ function setRole(r){
   $("serviceRole").classList.toggle("active",r==="service");
   $("techRole").classList.toggle("active",r==="technician");
   $("loginTitle").textContent=r==="service"?"Service Center Login":"Technician Login";
-  $("registerBox").classList.toggle("hidden",r!=="service");
   $("forgotLink").classList.remove("hidden");
   $("techResetNote").classList.toggle("hidden",r!=="technician");
   $("msg").className="msg";
@@ -86,7 +81,6 @@ function hideForgot(){
   $("forgotBox").classList.add("hidden");
   $("newPasswordBox").classList.add("hidden");
   $("loginBox").classList.remove("hidden");
-  if(role==="service")$("registerBox").classList.remove("hidden");
   $("msg").className="msg";
 }
 
@@ -153,17 +147,7 @@ async function login(){
  if(!center){await db.auth.signOut();return msg("Service Center account link nahi mila.");}
  localStorage.setItem("ananta_login_role","service_center");location.href="index.html";
 }
-async function register(){
- const center=$("regCenter").value.trim(),email=$("regEmail").value.trim().toLowerCase(),password=$("regPassword").value;
- if(!center)return msg("Service Center name bharein.");if(!email)return msg("Email bharein.");if(password.length<6)return msg("Password kam se kam 6 characters ka hona chahiye.");
- busy("regBtn",true,"Register Service Center");
- const {data,error}=await db.auth.signUp({email,password,options:{data:{service_center_name:center,role:"SERVICE_CENTER"}}});
- busy("regBtn",false,"Register Service Center");if(error)return msg(error.message);
- if(data.session){localStorage.setItem("ananta_login_role","service_center");msg("Account create ho gaya. Dashboard khul raha hai…",true);setTimeout(()=>location.href="index.html",500)}
- else msg("Account create ho gaya. Email verify karein, phir Service Center Login karein.",true);
-}
 $("loginBtn").addEventListener("click",login);
-$("regBtn").addEventListener("click",register);
 $("forgotBtn").addEventListener("click",sendReset);
 $("resetBtn").addEventListener("click",updatePassword);
 
