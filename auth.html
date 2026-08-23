@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ananta Service Center - Login</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f5f0;color:#243b32;font-family:Segoe UI,system-ui,sans-serif}
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.card{width:100%;max-width:430px;background:#fff;border:1px solid #d9d6c9;border-radius:14px;padding:25px;box-shadow:0 10px 35px rgba(0,0,0,.08)}
+h1{margin:0 0 5px;color:#22453a}.muted{color:#68756f;font-size:13px}label{display:block;margin:13px 0 5px;font-size:13px;font-weight:700}
+input{width:100%;padding:11px;border:1px solid #ccd6d0;border-radius:8px;font:inherit}button{border:0;border-radius:8px;padding:11px 15px;background:#2f5d4f;color:#fff;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6}.role{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.role button{background:#eef4f0;color:#2f5d4f;border:2px solid transparent}.role button.active{background:#2f5d4f;color:#fff;border-color:#2f5d4f}
+.msg{margin-top:13px;font-size:13px;display:none}.msg.show{display:block}.err{color:#a43b32}.ok{color:#2f5d4f}.hidden{display:none!important}.pw{display:flex;gap:6px}.pw input{flex:1}.eye{background:#eef4f0;color:#2f5d4f;padding:8px 11px}.rowline{display:flex;justify-content:flex-end;margin-top:6px}.linkbtn{background:none;color:#2f5d4f;padding:3px;font-weight:700}
+</style></head><body><div class="wrap"><div class="card">
+<h1>Ananta Service Center</h1><p class="muted">Login Type चुनें</p>
+<div class="role"><button id="serviceRole" class="active" type="button">🏢 Service Center</button><button id="techRole" type="button">🧰 Technician</button><button id="adminRole" type="button">👑 Admin</button></div>
+<div id="loginBox">
+<h3 id="loginTitle">Service Center Login</h3>
+<label>Email</label><input id="loginEmail" type="email" autocomplete="username">
+<label>Password</label><div class="pw"><input id="loginPassword" type="password" autocomplete="current-password"><button type="button" class="eye" onclick="togglePw('loginPassword',this)">👁</button></div>
+<div class="rowline"><button type="button" id="forgotLink" class="linkbtn" onclick="showForgot()">Forgot Password?</button></div><p id="techResetNote" class="muted hidden" style="text-align:right;margin:4px 0 0">Technician password Service Center se reset hoga.</p>
+<br><br><button id="loginBtn" style="width:100%">Login</button>
+</div>
+<div id="forgotBox" class="hidden">
+<hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0">
+<h3>Reset Password</h3>
+<p class="muted">Apne registered email par reset link mangayein.</p>
+<label>Email</label><input id="forgotEmail" type="email" autocomplete="email">
+<br><br><button id="forgotBtn" style="width:100%">Send Reset Link</button>
+<div class="rowline"><button type="button" id="backLoginBtn" class="linkbtn">Back to Login</button></div>
+</div>
+<div id="newPasswordBox" class="hidden">
+<hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0">
+<h3>Set New Password</h3>
+<label>New Password</label><div class="pw"><input id="newPassword" type="password"><button type="button" class="eye" onclick="togglePw('newPassword',this)">👁</button></div>
+<label>Confirm Password</label><div class="pw"><input id="confirmPassword" type="password"><button type="button" class="eye" onclick="togglePw('confirmPassword',this)">👁</button></div>
+<br><br><button id="resetBtn" style="width:100%">Update Password</button>
+</div>
+<p id="msg" class="msg"></p></div></div>
+<script>
+function openForgotPassword(e){
+  if(e)e.preventDefault();
+  var login=document.getElementById("loginBox");
+  var forgot=document.getElementById("forgotBox");
+  var reset=document.getElementById("newPasswordBox");
+  var email=document.getElementById("forgotEmail");
+  if(login)login.classList.add("hidden");
+  if(reset)reset.classList.add("hidden");
+  if(forgot)forgot.classList.remove("hidden");
+  var le=document.getElementById("loginEmail");
+  if(email && le)email.value=le.value||"";
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+const SUPABASE_URL="https://talzqxwoclrllbqudpkk.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_6H_DB7Z-5ygiX2hvMvQwZQ_ma-o-mQk";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let role="service";
+const ADMIN_EMAIL="ananta.services@yahoo.com";
+const $=id=>document.getElementById(id);
+function msg(text,ok=false){const e=$("msg");e.textContent=text;e.className="msg show "+(ok?"ok":"err")}
+function busy(id,b,label){const e=$(id);e.disabled=b;e.textContent=b?"Please wait…":label}
+function setRole(r){
+  role=r;
+  $("serviceRole").classList.toggle("active",r==="service");
+  $("techRole").classList.toggle("active",r==="technician");
+  if($("adminRole")) $("adminRole").classList.toggle("active",r==="admin");
+
+  $("loginTitle").textContent =
+    r==="service" ? "Service Center Login" :
+    r==="technician" ? "Technician Login" :
+    "Admin Login";
+
+  $("forgotLink").classList.toggle(
+    "hidden",
+    !(r==="service" || r==="admin")
+  );
+
+  $("techResetNote").classList.toggle(
+    "hidden",
+    r!=="technician"
+  );
+
+  $("msg").className="msg";
+}
+
+$("serviceRole").onclick=()=>setRole("service");
+$("techRole").onclick=()=>setRole("technician");
+if($("adminRole")) $("adminRole").onclick=()=>setRole("admin");
+
+function togglePw(id,btn){const e=$(id);e.type=e.type==="password"?"text":"password";btn.textContent=e.type==="password"?"👁":"🙈"}
+function showForgot(){
+  if(role==="technician"){
+    $("msg").textContent="Technician password Service Center hi reset karega. Service Center se contact karein.";
+    $("msg").className="msg show err";
+    return;
+  }
+  openForgotPassword(); $("msg").className="msg";
+}
+function hideForgot(){
+  $("forgotBox").classList.add("hidden");
+  $("newPasswordBox").classList.add("hidden");
+  $("loginBox").classList.remove("hidden");
+  $("msg").className="msg";
+}
+
+async function sendReset(){
+ const email=$("forgotEmail").value.trim().toLowerCase();
+ if(!email)return msg("Registered email bharein.");
+ busy("forgotBtn",true,"Send Reset Link");
+ try{
+   const redirectTo=location.origin+location.pathname;
+   const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+   if(error)throw error;
+   msg("Password reset link email par bhej diya gaya hai.",true);
+ }catch(e){
+   console.error("Password reset failed",e);
+   msg("Reset link nahi bheja gaya: "+(e.message||"Supabase error"));
+ }finally{
+   busy("forgotBtn",false,"Send Reset Link");
+ }
+}
+async function updatePassword(){
+ const p=$("newPassword").value,c=$("confirmPassword").value;
+ if(p.length<6)return msg("Password kam se kam 6 characters ka hona chahiye.");
+ if(p!==c)return msg("Password aur Confirm Password same nahi hain.");
+ busy("resetBtn",true,"Update Password");
+ try{
+   const {error}=await db.auth.updateUser({password:p});
+   if(error)throw error;
+   await db.auth.signOut();
+   $("newPasswordBox").classList.add("hidden");
+   $("loginBox").classList.remove("hidden");
+   msg("Password update ho gaya. Ab login karein.",true);
+ }catch(e){
+   console.error("Password update failed",e);
+   msg("Password update nahi hua: "+(e.message||"Supabase error"));
+ }finally{
+   busy("resetBtn",false,"Update Password");
+ }
+}
+
+async function login(){
+ const email=$("loginEmail").value.trim().toLowerCase(),password=$("loginPassword").value;
+ if(!email||!password)return msg("Email aur password bharein.");
+
+ if(role==="admin" && email!==ADMIN_EMAIL.toLowerCase())
+   return msg("Admin access denied.");
+
+ busy("loginBtn",true,"Login");
+ try{
+   const {data,error}=await db.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   if(!data.session)return msg("Login session nahi mila.");
+   const u=data.user;
+
+   if(role==="admin"){
+     if(String(u.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()){
+       await db.auth.signOut();
+       return msg("Admin access denied.");
+     }
+     localStorage.setItem("ananta_login_role","admin");
+     location.href="admin.html";
+     return;
+   }
+
+   if(role==="technician"){
+     localStorage.setItem("ananta_login_role","technician");
+     location.href="technician.html";
+     return;
+   }
+
+   let meta=Object.assign({},u.user_metadata||{},u.app_metadata||{});
+   let centerId=meta.service_center_id||"",center=null;
+   if(centerId){
+     const r=await db.from("service_centers").select("id,name,service_center_code,is_active").eq("id",centerId).maybeSingle();
+     center=r.data;
+   }
+   if(!center){
+     let r=await db.from("service_centers").select("id,name,service_center_code,is_active").eq("user_id",u.id).maybeSingle();
+     if(!r.data) r=await db.from("service_centers").select("id,name,service_center_code,is_active").eq("owner_user_id",u.id).maybeSingle();
+     center=r.data;
+   }
+   if(!center){await db.auth.signOut();return msg("Service Center account link nahi mila.");}
+   if(center.is_active===false){await db.auth.signOut();return msg("Service Center account disabled hai. Admin se contact karein.");}
+   localStorage.setItem("ananta_login_role","service_center");
+   location.href="index.html";
+ }catch(e){
+   console.error("Login failed",e);
+   msg(e.message||"Login failed");
+ }finally{
+   busy("loginBtn",false,"Login");
+ }
+}
+$("loginBtn").addEventListener("click",login);
+$("forgotBtn").addEventListener("click",sendReset);
+$("resetBtn").addEventListener("click",updatePassword);
+
+$("backLoginBtn").addEventListener("click",function(e){e.preventDefault();hideForgot();});
+
+db.auth.onAuthStateChange(function(event,session){
+  if(event==="PASSWORD_RECOVERY"){
+    if(session && session.user && String(session.user.email||"").toLowerCase()===ADMIN_EMAIL.toLowerCase()) setRole("admin");
+    else setRole("service");
+    $("loginBox").classList.add("hidden");
+    $("forgotBox").classList.add("hidden");
+    $("newPasswordBox").classList.remove("hidden");
+    $("msg").className="msg";
+  }
+});
+setRole("service");
+</script></body></html>
