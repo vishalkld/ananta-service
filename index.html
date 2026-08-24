@@ -4039,16 +4039,7 @@ bootApp();
     clear?.addEventListener('click',()=>{search.value='';from.value='';to.value='';apply();});
   }
 
-  function addFooter(){
-    if(document.querySelector('.ananta-footer')) return;
-    const footer=document.createElement('footer');
-    footer.className='ananta-footer';
-    footer.innerHTML='© <span id="anantaCopyrightYear"></span> Ananta Enterprises. All Rights Reserved.';
-    document.body.appendChild(footer);
-    document.getElementById('anantaCopyrightYear').textContent=new Date().getFullYear();
-  }
-
-  function init(){ setupComplaintAllocationFilters(); addFooter(); }
+  function init(){ setupComplaintAllocationFilters();  }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
 })();
@@ -4176,6 +4167,7 @@ bootApp();
 </script>
 
 <footer id="ananta-green-copyright" class="ananta-green-copyright">© <span id="anantaCopyrightYear"></span> Ananta Enterprises · All Rights Reserved</footer>
+  <script>document.getElementById("anantaCopyrightYear").textContent=new Date().getFullYear();
 (function(){
   function bindTechStockDateFilters(){
     const from=document.getElementById('dash_techStockFrom');
