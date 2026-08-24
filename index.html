@@ -1,0 +1,3686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANANTA Service Center Management v8 — Fixed Inventory</title><meta name="app-version" content="v8-fixed-inventory">
+<!-- Spare Parts Inventory — Service Center -->
+<style>
+  :root{
+    --ink:#1c2b24;
+    --paper:#f6f5f0;
+    --panel:#ffffff;
+    --line:#d9d6c9;
+    --brand:#2f5d4f;
+    --brand-dark:#22453a;
+    --brand-soft:#e4ede9;
+    --amber:#b8842e;
+    --amber-soft:#faf1de;
+    --red:#a4392f;
+    --red-soft:#f8e6e3;
+    --blue:#2e5f8a;
+    --blue-soft:#e5eef5;
+    --muted:#6b6a5f;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(28,43,36,.06), 0 4px 14px rgba(28,43,36,.05);
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;overflow-x:hidden;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Segoe UI", "Noto Sans Devanagari", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1260px;margin:0 auto;padding:0 16px 20px;}
+
+  header.top{
+    background:var(--brand-dark);
+    color:#f2efe4;
+    padding:18px 16px;
+    margin-bottom:20px;
+  }
+  header.top .wrap{max-width:1260px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  header.top h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.2px;}
+  header.top .tag{font-size:.75rem;color:#cddccf;margin-top:2px;}
+  header.top .meta{font-size:.78rem;color:#cddccf;text-align:right;}
+
+  nav.tabs{
+    display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);padding:4px;margin-bottom:20px;overflow-x:auto;
+  }
+  nav.tabs button{
+    flex:1 1 auto;white-space:nowrap;background:transparent;border:none;
+    padding:10px 14px;font-size:.86rem;font-weight:600;color:var(--muted);
+    border-radius:7px;cursor:pointer;transition:background .15s, color .15s;
+  }
+  nav.tabs button.active{background:var(--brand);color:#fff;}
+  nav.tabs button:not(.active):hover{background:var(--brand-soft);color:var(--brand-dark);}
+
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:20px;margin-bottom:20px;
+  }
+  .panel h2{font-size:1rem;margin:0 0 4px;color:var(--brand-dark);}
+  .panel .sub{font-size:.8rem;color:var(--muted);margin:0 0 16px;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+  .stat-card{
+    background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--brand);
+    border-radius:8px;padding:14px 16px;box-shadow:var(--shadow);
+  }
+  .stat-card .num{font-size:1.5rem;font-weight:700;color:var(--brand-dark);}
+  .stat-card .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+  .stat-card.warn{border-left-color:var(--amber);}
+  .stat-card.warn .num{color:var(--amber);}
+  .stat-card.danger{border-left-color:var(--red);}
+  .stat-card.danger .num{color:var(--red);}
+
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:.74rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .field input, .field select, .field textarea{
+    border:1px solid var(--line);border-radius:7px;padding:9px 10px;font-size:.92rem;
+    font-family:inherit;background:#fdfdfb;color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);
+  }
+  .field.wide{grid-column:1 / -1;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    background:var(--brand);color:#fff;border:none;padding:10px 18px;border-radius:7px;
+    font-size:.88rem;font-weight:600;cursor:pointer;transition:background .15s;
+  }
+  .btn:hover{background:var(--brand-dark);}
+  .btn.secondary{background:transparent;color:var(--brand-dark);border:1px solid var(--brand);}
+  .btn.secondary:hover{background:var(--brand-soft);}
+  .btn.danger{background:var(--red);}
+  .btn.danger:hover{background:#822c24;}
+  .btn.small{padding:6px 12px;font-size:.78rem;}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+
+  /* Scrollbar fix for tables */
+  .table-wrap{
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin-bottom:5px;
+  }
+  .table-wrap::-webkit-scrollbar {
+    height: 6px;
+  }
+  .table-wrap::-webkit-scrollbar-thumb {
+    background: #c5c2b5;
+    border-radius: 4px;
+  }
+  table{width:100%;border-collapse:collapse;font-size:.83rem;min-width:950px;}
+  thead th{
+    background:var(--brand-soft);color:var(--brand-dark);text-align:left;padding:9px 10px;
+    font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;
+    white-space:nowrap;position:sticky;top:0;
+  }
+  tbody td{padding:9px 10px;border-top:1px solid var(--line);white-space:nowrap;}
+  tbody tr:hover{background:#fafaf5;}
+  tbody tr:nth-child(even){background:#fcfcf9;}
+  tbody tr:nth-child(even):hover{background:#f7f6ef;}
+
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700;white-space:nowrap;}
+  .pill.stock{background:var(--blue-soft);color:var(--blue);}
+  .pill.issued{background:var(--amber-soft);color:var(--amber);}
+  .pill.used{background:#eee6f6;color:#6a3fa0;}
+  .pill.defective{background:var(--red-soft);color:var(--red);}
+  .pill.sent{background:#e7e2d3;color:#7a6a3d;}
+  .pill.credit{background:var(--brand-soft);color:var(--brand);}
+  .pill.zero{background:#f1f0eb;color:#a3a196;}
+
+  .icon-btn{background:none;border:none;cursor:pointer;font-size:.9rem;padding:4px 7px;border-radius:5px;color:var(--muted);}
+  .icon-btn:hover{background:var(--red-soft);color:var(--red);}
+  .icon-btn.edit:hover{background:var(--blue-soft);color:var(--blue);}
+  .row-actions{display:flex;gap:2px;}
+
+  .filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+  .filter-bar .field{min-width:160px;}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty .big{font-size:1.8rem;margin-bottom:8px;}
+
+  #toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(120%);
+    background:var(--brand-dark);color:#fff;padding:12px 22px;border-radius:8px;
+    font-size:.86rem;box-shadow:0 6px 20px rgba(0,0,0,.25);
+    transition:transform .25s ease;z-index:999;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0);}
+
+  .modal-bg{
+    display:none;position:fixed;inset:0;background:rgba(28,43,36,.45);
+    align-items:center;justify-content:center;z-index:998;padding:16px;
+  }
+  .modal-bg.show{display:flex;}
+  .modal{background:#fff;border-radius:var(--radius);padding:22px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;}
+  .modal h3{margin:0 0 10px;font-size:1rem;color:var(--brand-dark);}
+  .modal p{font-size:.86rem;color:var(--muted);margin:0 0 18px;}
+  .modal .btn-row{justify-content:flex-end;}
+  .modal .form-grid{margin-bottom:6px;}
+
+  .flow-strip{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    font-size:.76rem;color:var(--muted);background:var(--brand-soft);
+    border-left:3px solid var(--brand);padding:10px 14px;border-radius:6px;margin-bottom:16px;
+  }
+  .flow-strip b{color:var(--brand-dark);}
+  .flow-strip .arrow{color:var(--brand);font-weight:700;}
+
+  @media (max-width:640px){
+    header.top .meta{display:none;}
+    .form-grid{grid-template-columns:1fr 1fr;}
+    table{min-width:800px;}
+  }
+
+  .pager{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .pager button{border:1px solid #cfcfcf;background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer}
+  .pager button.active{background:#2f5d4f;color:#fff;border-color:#2f5d4f}
+  .pager button:disabled{opacity:.45;cursor:not-allowed}
+  .pager .page-info{font-size:.82rem;color:#666;margin:0 6px}
+  .lang-hi{font-family:"Noto Sans Devanagari","Nirmala UI",system-ui,sans-serif}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>Spare Parts Inventory</h1>
+      <div class="tag">Warranty Service Center · Multi-Company Tracking</div>
+    </div>
+    <div class="meta" id="headerMeta"></div><div style="margin-left:10px;display:flex;align-items:center;gap:6px"><label for="langSelect" style="font-size:.78rem;color:#666">Language</label><select id="langSelect" onchange="setLanguage(this.value)" style="padding:6px 8px;border:1px solid #ccc;border-radius:6px"><option value="en">English</option><option value="hi">हिंदी</option></select></div>
+  </div>
+</header>
+
+<div class="app">
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="receive">Part Received</button>
+    <button data-tab="issue">Issue to Technician</button>
+    <button data-tab="use">Used on Complaint</button>
+    <button data-tab="collect">Collect from Technician</button>
+    <button data-tab="return">Return to Company</button>
+    <button data-tab="stock">Stock Summary</button>
+    <button data-tab="log">Full Log</button>
+    <button data-tab="companies">Companies</button>
+    <button data-tab="catalog">Catalog</button>
+    <button data-tab="complaints">Complaints</button><button data-tab="technicians">Technicians</button>
+  </nav>
+
+  <!-- ================= DASHBOARD ================= -->
+  <section id="tab-dashboard" class="tabpanel">
+    <div class="stat-row" id="statRow"></div>
+
+    <div class="panel">
+      <h2>Technician ke paas — Fresh + Defective (dono ek saath)</h2>
+      <p class="sub">Har technician ke paas kitna Fresh aur kitna Defective hai</p>
+      <div class="filter-bar">
+        <div class="field"><label>Technician Filter</label><select id="dash_techFilter" onchange="renderTechCombinedTable()"><option value="">Sab Technicians</option></select></div>
+        <div class="field"><label>Company Filter</label><select id="dash_companyFilter" onchange="renderTechCombinedTable()"><option value="">Sab Companies</option></select></div>
+      </div>
+      <div class="table-wrap"><table id="techCombinedTable"></table></div>
+    </div>
+
+    <div class="panel">
+      <h2>Service Center ke paas — Fresh + Defective</h2>
+      <p class="sub">Fresh = available in center. Defective = collected from tech, pending return to company</p>
+      <div class="table-wrap"><table id="centerCombinedTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= RECEIVE ================= -->
+  <section id="tab-receive" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Company se Part Received</h2>
+      <p class="sub">Jab company se naya stock aaye, yahan entry karein</p>
+      <div class="form-grid" id="receiveForm">
+        <div class="field"><label>Date</label><input type="date" id="r_date"></div>
+        <div class="field"><label>Company</label><select id="r_company" onchange="refreshReceiveProductOptions()"></select></div>
+        <div class="field"><label>Product</label><select id="r_product" onchange="refreshReceiveModelOptions()"></select></div>
+        <div class="field"><label>Product Model</label><select id="r_model" onchange="refreshReceivePartOptions()"></select></div>
+        <div class="field"><label>Part</label><select id="r_part"></select></div>
+        <div class="field"><label>Quantity</label><input type="number" id="r_qty" min="1" value="1"></div>
+        <div class="field wide"><label>Remarks</label><input type="text" id="r_remarks" placeholder="Optional"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitReceive()">+ Add Entry</button>
+        <button class="btn secondary" onclick="switchTab('catalog')">Catalog mein naya part add karein</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Recent Received Entries</h2>
+      <div class="table-wrap"><table id="receiveTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= ISSUE ================= -->
+  <section id="tab-issue" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Technician ko Part Issue Karein</h2>
+      <p class="sub">Service Center ke Fresh stock se technician ko part diya</p>
+      <div class="form-grid" id="issueForm">
+        <div class="field"><label>Date</label><input type="date" id="i_date"></div>
+        <div class="field"><label>Company</label><select id="i_company" onchange="refreshIssueProductOptions()"></select></div>
+        <div class="field"><label>Product</label><select id="i_product" onchange="refreshIssueModelOptions()"></select></div>
+        <div class="field"><label>Product Model</label><select id="i_model" onchange="refreshIssuePartOptions()"></select></div>
+        <div class="field"><label>Part (Fresh Available)</label><select id="i_part"></select></div>
+        <div class="field"><label>Technician</label><select id="i_tech"></select></div>
+        <div class="field"><label>Quantity</label><input type="number" id="i_qty" min="1" value="1"></div>
+        <div class="field wide"><label>Remarks</label><input type="text" id="i_remarks" placeholder="Optional"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitIssue()">+ Issue Part</button>
+        <button class="btn secondary" onclick="switchTab('technicians')">Naya Technician add karein</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Recent Issue Entries</h2>
+      <div class="table-wrap"><table id="issueTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= USE ================= -->
+  <section id="tab-use" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Complaint par Part Use Hua</h2>
+      <div class="flow-strip">
+        <b>Jaise hi "Use" hota hai:</b> <span class="arrow">→</span> Technician ke Fresh se qty ghatti <span class="arrow">→</span> Technician ke Defective mein wahi qty add ho jaati hai
+      </div>
+      <div class="form-grid" id="useForm">
+        <div class="field"><label>Date</label><input type="date" id="u_date"></div>
+        <div class="field"><label>Company</label><select id="u_company"></select></div>
+        <div class="field"><label>Technician</label><select id="u_tech"></select></div>
+        <div class="field"><label>Part (Fresh with Technician)</label><select id="u_part"></select></div>
+        <div class="field"><label>Complaint / Job ID</label><input type="text" id="u_complaint" placeholder="e.g. CMP-1042"></div>
+        <div class="field"><label>Customer Name</label><input type="text" id="u_customer"></div>
+        <div class="field"><label>Qty Used</label><input type="number" id="u_qty" min="1" value="1"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitUse()">+ Save Usage</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Usage History (Complaint-wise)</h2>
+      <div class="table-wrap"><table id="useTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= COLLECT FROM TECHNICIAN ================= -->
+  <section id="tab-collect" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Technician se Defective Collect Karein</h2>
+      <div class="flow-strip">
+        <b>Jaise hi collect hota hai:</b> <span class="arrow">→</span> Technician ke Defective se qty hat jaati hai <span class="arrow">→</span> Service Center ke Defective mein add ho jaati hai
+      </div>
+      <div class="form-grid" id="collectForm">
+        <div class="field"><label>Date</label><input type="date" id="cl_date"></div>
+        <div class="field"><label>Company</label><select id="cl_company" onchange="refreshCollectOptions()"></select></div>
+        <div class="field"><label>Technician</label><select id="cl_tech" onchange="refreshCollectOptions()"></select></div>
+        <div class="field"><label>Part (Defective with Technician)</label><select id="cl_part"></select></div>
+        <div class="field"><label>Qty Collected</label><input type="number" id="cl_qty" min="1" value="1"></div>
+        <div class="field wide"><label>Remarks</label><input type="text" id="cl_remarks" placeholder="Optional"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitCollect()">+ Collect from Technician</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Collection History</h2>
+      <div class="table-wrap"><table id="collectTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= RETURN TO COMPANY ================= -->
+  <section id="tab-return" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Defective Part Company ko Return</h2>
+      <div class="flow-strip">
+        <b>Jaise hi return hota hai:</b> <span class="arrow">→</span> Service Center ke Defective se qty hat jaati hai <span class="arrow">→</span> "Sent to Company" mein count hoti hai
+      </div>
+      <div class="form-grid" id="returnForm">
+        <div class="field"><label>Date</label><input type="date" id="s_date"></div>
+        <div class="field"><label>Company</label><select id="s_company" onchange="refreshReturnPartOptions()"></select></div>
+        <div class="field"><label>Part (Defective in Service Center)</label><select id="s_part"></select></div>
+        <div class="field"><label>Qty Sent</label><input type="number" id="s_qty" min="1" value="1"></div>
+        <div class="field"><label>RMA / Return Ref No.</label><input type="text" id="s_rma"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitReturn()">+ Mark as Sent</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Credit / Replacement Received</h2>
+      <p class="sub">Company se replacement ya credit mile to yahan close karein</p>
+      <div class="form-grid" id="creditForm">
+        <div class="field"><label>Date</label><input type="date" id="c_date"></div>
+        <div class="field"><label>Company</label><select id="c_company" onchange="refreshCreditPartOptions()"></select></div>
+        <div class="field"><label>RMA / Return Ref No.</label><input type="text" id="c_rma" placeholder="Jis RMA se match kare"></div>
+        <div class="field"><label>Part</label><select id="c_part"></select></div>
+        <div class="field"><label>Qty Credited</label><input type="number" id="c_qty" min="1" value="1"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitCredit()">+ Save Credit</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Return / Credit Log</h2>
+      <div class="table-wrap"><table id="returnTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= STOCK SUMMARY ================= -->
+  <section id="tab-stock" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Company + Product + Model + Part wise Stock Summary</h2>
+      <p class="sub">Fresh aur Defective — Technician ke paas aur Service Center dono jagah, ek jagah</p>
+      <div class="filter-bar">
+        <div class="field"><label>Company Filter</label><select id="ss_companyFilter" onchange="renderStockSummary()"><option value="">Sab Companies</option></select></div>
+        <div class="field"><label>Product Filter</label><select id="ss_productFilter" onchange="updateStockSummaryModelFilter(); renderStockSummary();"><option value="">Sab Products</option></select></div>
+        <div class="field"><label>Model Filter</label><select id="ss_modelFilter" onchange="renderStockSummary()"><option value="">Sab Models</option></select></div>
+      </div>
+      <div class="table-wrap"><table id="stockSummaryTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= FULL LOG ================= -->
+  <section id="tab-log" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Poora Transaction Log</h2>
+      <p class="sub">Har transaction ki history — Edit ✎ ya Delete ✕ kar sakte hain.</p>
+      <div class="filter-bar">
+        <div class="field"><label>Company</label><select id="log_company" onchange="renderFullLog()"><option value="">Sab</option></select></div>
+        <div class="field"><label>Type</label>
+          <select id="log_type" onchange="renderFullLog()">
+            <option value="">Sab</option>
+            <option value="receive">Received</option>
+            <option value="issue">Issued</option>
+            <option value="use">Used</option>
+            <option value="collect">Collected from Tech</option>
+            <option value="return">Sent to Company</option>
+            <option value="credit">Credit Received</option>
+          </select>
+        </div>
+        <div class="field"><label>&nbsp;</label><button class="btn secondary small" onclick="exportCSV()">⭳ Export CSV</button></div>
+      </div>
+      <div class="table-wrap"><table id="fullLogTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= COMPANIES ================= -->
+  <section id="tab-companies" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Company Master List</h2>
+      <p class="sub">Apni saari partner companies yahan add karein</p>
+      <div class="form-grid">
+        <div class="field"><label>Company Name</label><input type="text" id="co_name" placeholder="e.g. Surya"></div>
+        <div class="field"><label>Contact Person</label><input type="text" id="co_contact"></div>
+        <div class="field"><label>Contact Number</label><input type="text" id="co_phone"></div>
+        <div class="field wide"><label>Notes / Return Policy</label><input type="text" id="co_notes"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitCompany()">+ Add Company</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Company List</h2>
+      <div class="table-wrap"><table id="companyTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ================= CATALOG ================= -->
+  <section id="tab-catalog" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Naya Part Catalog Mein Add Karein</h2>
+      <p class="sub">Company → Product → Product Model → Part set kar dein</p>
+      <div class="form-grid">
+        <div class="field"><label>Company</label><select id="cat_company"></select></div>
+        <div class="field"><label>Product</label><input type="text" id="cat_product" placeholder="e.g. Mixer, RO, AC" list="cat_productList"></div>
+        <div class="field"><label>Product Model</label><input type="text" id="cat_model" placeholder="e.g. 500W, 750W, Eco" list="cat_modelList"></div>
+        <div class="field"><label>Part Number</label><input type="text" id="cat_partno" placeholder="e.g. MX-MOT-01"></div>
+        <div class="field"><label>Part Name</label><input type="text" id="cat_partname" placeholder="e.g. Motor"></div>
+      </div>
+      <datalist id="cat_productList"></datalist>
+      <datalist id="cat_modelList"></datalist>
+      <div class="btn-row">
+        <button class="btn" onclick="submitCatalog()">+ Add to Catalog</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Poora Catalog</h2>
+      <p class="sub">Company → Product → Model → Part ki poori list</p>
+      <div class="filter-bar">
+        <div class="field"><label>Company Filter</label><select id="cat_companyFilter" onchange="renderCatalogTable()"><option value="">Sab Companies</option></select></div>
+      </div>
+      <div class="table-wrap"><table id="catalogTable"></table></div>
+    </div>
+  </section>
+
+
+  <!-- ================= COMPLAINTS ================= -->
+  <section id="tab-complaints" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Complaint Allocation</h2>
+      <p class="sub">Company complaint number ko technician ko allocate karein</p>
+      <div class="form-grid">
+        <div class="field">
+          <label>Company</label>
+          <select id="cp_company"></select>
+        </div>
+        <div class="field">
+          <label>Company Complaint Number *</label>
+          <input id="cp_number" type="text" placeholder="Company se mila unique complaint number">
+        </div>
+        <div class="field">
+          <label>Customer Name</label>
+          <input id="cp_customer" type="text">
+        </div>
+        <div class="field">
+          <label>Customer Mobile</label>
+          <input id="cp_mobile" type="text">
+        </div>
+        <div class="field wide">
+          <label>Customer Address</label>
+          <textarea id="cp_address" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label>Product</label>
+          <input id="cp_product" type="text" placeholder="e.g. INDUCTION">
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <input id="cp_model" type="text">
+        </div>
+        <div class="field">
+          <label>Technician</label>
+          <select id="cp_tech"></select>
+        </div>
+        <div class="field wide">
+          <label>Company Document / Photo</label>
+          <input id="cp_file" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+          <small style="color:#777">HTML-only version: attachment is stored in the complaint record. Large files may be rejected by database limits.</small>
+        </div>
+        <div class="field wide">
+          <label>Allocation Remark</label>
+          <textarea id="cp_remark" rows="2" placeholder="Technician ke liye instruction"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitComplaint()">+ Allocate Complaint</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <h2 style="margin-bottom:4px">Complaint Register</h2>
+          <p class="sub">OPEN → ASSIGNED → IN PROGRESS → CLOSED / CANCELLED</p>
+        </div>
+        <div class="field" style="min-width:150px">
+          <label>Show</label>
+          <select id="cp_pageSize" onchange="renderComplaintTable()">
+            <option value="10">10</option><option value="20">20</option>
+            <option value="50">50</option><option value="100">100</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="field"><label>Status</label>
+          <select id="cp_statusFilter" onchange="renderComplaintTable()">
+            <option value="">All Status</option>
+            <option value="ASSIGNED">ASSIGNED</option>
+            <option value="IN PROGRESS">IN PROGRESS</option>
+            <option value="CLOSED">CLOSED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+        </div>
+        <div class="field"><label>Technician</label>
+          <select id="cp_techFilter" onchange="renderComplaintTable()"><option value="">All Technicians</option></select>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="complaintTable"></table></div>
+      <div id="complaintPager" class="pager"></div>
+    </div>
+  </section>
+
+  <!-- ================= TECHNICIANS ================= -->
+  <section id="tab-technicians" class="tabpanel" style="display:none">
+    <div class="panel">
+      <h2>Technician Master List</h2>
+      <p class="sub">Apne saare technicians yahan add karein</p>
+      <div class="form-grid">
+        <div class="field"><label>Technician Name</label><input type="text" id="tech_name" placeholder="e.g. Rakesh Kumar"></div>
+        <div class="field"><label>Phone Number</label><input type="text" id="tech_phone" placeholder="Mobile Number"></div>
+        <div class="field"><label>Login Email</label><input type="email" id="tech_email" placeholder="Technician Email"></div>
+        <div class="field"><label>Login Password</label><input type="password" id="tech_password" placeholder="Minimum 6 characters"><small style="color:#777">New technician account ke liye password.</small></div>
+        <div class="field wide"><label>Area / Notes</label><input type="text" id="tech_notes" placeholder="Optional"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="submitTechnician()">+ Add Technician</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Technician List</h2>
+      <div class="table-wrap"><table id="technicianTable"></table></div>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast"></div>
+
+<div class="modal-bg" id="confirmModal">
+  <div class="modal">
+    <h3 id="modalTitle">Confirm</h3>
+    <p id="modalText">Are you sure?</p>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn danger" id="modalConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h3 id="editModalTitle">Edit Entry</h3>
+    <div class="form-grid" id="editModalBody"></div>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn" id="editModalSaveBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =========================================================
+   STORAGE + SUPABASE AUTH + SERVICE CENTER ISOLATION
+   ========================================================= */
+const STORE_KEY_BASE = "wsp_inventory_v5";
+const SUPABASE_URL = "https://talzqxwoclrllbqudpkk.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6H_DB7Z-5ygiX2hvMvQwZQ_ma-o-mQk";
+
+let DB = null;
+let remoteReady = false;
+let remoteSaving = false;
+let remoteSaveQueued = false;
+let remoteLastError = null;
+let currentUser = null;
+let currentServiceCenter = null;
+let supabaseClient = null;
+
+function supabaseConfigured(){
+  return SUPABASE_URL.startsWith('https://') &&
+         SUPABASE_ANON_KEY.length > 30 &&
+         !SUPABASE_URL.includes('PASTE_YOUR_') &&
+         !SUPABASE_ANON_KEY.includes('PASTE_YOUR_');
+}
+
+function getStoreKey(){
+  // Every Service Center has an isolated browser storage namespace.
+  // There is intentionally NO shared/global inventory fallback.
+  if(!currentServiceCenter?.id) return null;
+  return `${STORE_KEY_BASE}_${String(currentServiceCenter.id)}`;
+}
+
+function loadDB(){
+  const key = getStoreKey();
+  if(!key) return null;
+  try{
+    const raw = localStorage.getItem(key);
+    if(raw) return JSON.parse(raw);
+  }catch(e){
+    console.warn("Service Center local storage read failed", e);
+  }
+  return null;
+}
+
+function seedDB(){
+  return {
+    companies: [
+      {id: uid(), name:"Surya", contact:"", phone:"", notes:""},
+      {id: uid(), name:"Kent", contact:"", phone:"", notes:""},
+      {id: uid(), name:"Usha", contact:"", phone:"", notes:""}
+    ],
+    catalog: [],
+    technicians: [],
+    complaints: [],
+    txns: []
+  };
+}
+
+function normalizeDB(db){
+  db = db || seedDB();
+  if(!db.txns) db.txns = [];
+  if(!db.companies) db.companies = [];
+  if(!db.catalog) db.catalog = [];
+  if(!db.technicians) db.technicians = [];
+  if(!db.complaints) db.complaints = [];
+  return db;
+}
+
+function localSave(){
+  const key = getStoreKey();
+  if(!key || !DB) return;
+  try{
+    localStorage.setItem(key, JSON.stringify(DB));
+  }catch(e){
+    console.error("Service Center local save failed", e);
+  }
+}
+
+function uid(){ return 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function getServiceCenterIdFromUser(user){
+  // The authenticated Supabase user is the only source of the Service Center ID.
+  // A shared localStorage ID is deliberately not trusted.
+  return user?.user_metadata?.service_center_id ||
+         user?.app_metadata?.service_center_id ||
+         "";
+}
+
+function showLoginRequired(){
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#f6f5f0;font-family:Segoe UI,system-ui,sans-serif">
+      <div style="max-width:420px;width:100%;background:#fff;border:1px solid #d9d6c9;border-radius:12px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,.08);text-align:center">
+        <h2 style="margin:0 0 8px;color:#22453a">Login Required</h2>
+        <p style="color:#6b6a5f">Pehle Service Center account se login karein.</p>
+        <button onclick="location.href='auth.html'" style="background:#2f5d4f;color:#fff;border:0;border-radius:7px;padding:11px 20px;font-weight:600;cursor:pointer">Go to Login</button>
+      </div>
+    </div>`;
+}
+
+function showCenterRequired(){
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#f6f5f0;font-family:Segoe UI,system-ui,sans-serif">
+      <div style="max-width:520px;width:100%;background:#fff;border:1px solid #d9d6c9;border-radius:12px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,.08)">
+        <h2 style="margin:0 0 8px;color:#22453a">Service Center not linked</h2>
+        <p style="color:#6b6a5f">Is login account ko kisi Service Center se link nahi kiya gaya hai.</p>
+        <p style="font-size:.85rem;color:#6b6a5f">Supabase mein service_center_id ko is user ke metadata mein set karein.</p>
+        <button onclick="signOutUser()" style="background:#a4392f;color:#fff;border:0;border-radius:7px;padding:10px 18px;font-weight:600;cursor:pointer">Logout</button>
+      </div>
+    </div>`;
+}
+
+async function initSupabaseAuth(){
+  if(!supabaseConfigured()){
+    showLoginRequired();
+    return false;
+  }
+
+  if(!window.supabase || !window.supabase.createClient){
+    console.error("Supabase JS library not loaded");
+    showToast("⚠ Supabase library load nahi hui");
+    return false;
+  }
+
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const {data, error} = await supabaseClient.auth.getSession();
+  if(error || !data.session){
+    showLoginRequired();
+    return false;
+  }
+
+  currentUser = data.session.user;
+
+  // First try service_center_id from the user's metadata/local storage.
+  let centerId = getServiceCenterIdFromUser(currentUser);
+  let center = null;
+  let centerError = null;
+
+  // If metadata is not set, find the Service Center by the Auth user's ID.
+  // This matches the service_centers.user_id value configured in Supabase.
+  if(!centerId){
+    const result = await supabaseClient
+      .from("service_centers")
+      .select("id,name,user_id,service_center_code")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    center = result.data;
+    centerError = result.error;
+    if(center) centerId = center.id;
+  }
+
+  if(!centerId){
+    console.error("No Service Center linked to user", {
+      userId: currentUser.id,
+      email: currentUser.email,
+      centerError
+    });
+    showCenterRequired();
+    return false;
+  }
+
+  // Do not store the active Service Center ID in a shared localStorage key.
+  // The authenticated Supabase user remains the source of truth.
+
+  // If the center was not loaded by user_id, load it by its ID.
+  if(!center){
+    const result = await supabaseClient
+      .from("service_centers")
+      .select("id,name,user_id,service_center_code")
+      .eq("id", centerId)
+      .maybeSingle();
+
+    center = result.data;
+    centerError = result.error;
+  }
+
+  if(centerError || !center){
+    console.error("Service center lookup failed", centerError);
+    showCenterRequired();
+    return false;
+  }
+
+  currentServiceCenter = center;
+  document.getElementById("headerMeta").textContent =
+    `${center.name} · ${currentUser.email || ""}`;
+
+  supabaseClient.auth.onAuthStateChange((event, session)=>{
+    if(event === "SIGNED_OUT" || !session){
+      location.href = "auth.html";
+    }
+  });
+
+  return true;
+}
+
+async function signOutUser(){
+  try{
+    if(supabaseClient) await supabaseClient.auth.signOut();
+  }catch(e){}
+  location.href = "auth.html";
+}
+
+
+/* =========================================================
+   LOW-EGRESS DATABASE SYNC V2
+   - Avoids repeated full reads during the same browser session.
+   - Debounces writes so multiple UI changes become one request.
+   - Compresses large JSON snapshots when possible.
+   - Never overwrites a valid remote row with stale local data after
+     a failed remote read.
+   ========================================================= */
+
+const EGRESS_CACHE_TTL = 60 * 1000;       // 60 sec in-memory read cache
+const EGRESS_SAVE_DEBOUNCE = 1500;        // batch rapid writes
+let remoteReadCache = null;
+let remoteReadCacheAt = 0;
+let remoteSaveTimer = null;
+let remoteSavePromise = null;
+let remoteLastSnapshotHash = "";
+
+function stableJSONStringify(obj){
+  try { return JSON.stringify(obj); } catch(e){ return ""; }
+}
+
+async function sha256Hex(str){
+  if(!window.crypto?.subtle) return String(str.length) + ":" + str.slice(0,80);
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function canUseCompression(){
+  return typeof CompressionStream !== "undefined" && typeof DecompressionStream !== "undefined";
+}
+
+async function gzipBase64(str){
+  if(!canUseCompression()) return str;
+  const cs = new CompressionStream("gzip");
+  const writer = cs.writable.getWriter();
+  writer.write(new TextEncoder().encode(str));
+  writer.close();
+  const ab = await new Response(cs.readable).arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(ab);
+  const chunk = 0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary += String.fromCharCode(...bytes.subarray(i,i+chunk));
+  }
+  return btoa(binary);
+}
+
+async function gunzipBase64(b64){
+  if(!canUseCompression()) return b64;
+  try{
+    const binary = atob(b64);
+    const bytes = Uint8Array.from(binary, c=>c.charCodeAt(0));
+    const ds = new DecompressionStream("gzip");
+    const ab = await new Response(
+      new Blob([bytes]).stream().pipeThrough(ds)
+    ).arrayBuffer();
+    return new TextDecoder().decode(ab);
+  }catch(e){
+    return b64;
+  }
+}
+
+async function remoteFetchDB(force=false){
+  if(!supabaseClient || !currentServiceCenter){
+    return {ok:false,data:null,error:new Error("Not authenticated")};
+  }
+
+  const now = Date.now();
+
+  // Do not download the same 31 MB snapshot repeatedly during a session.
+  if(!force && remoteReadCache &&
+     (now - remoteReadCacheAt) < EGRESS_CACHE_TTL){
+    return {ok:true,data:remoteReadCache,fromCache:true};
+  }
+
+  try{
+    const {data,error} = await supabaseClient
+      .from("app_data")
+      .select("service_center_id,data")
+      .eq("service_center_id", currentServiceCenter.id)
+      .maybeSingle();
+
+    if(error) throw error;
+
+    if(!data){
+      remoteReadCache = null;
+      remoteReadCacheAt = now;
+      return {ok:true,data:null};
+    }
+
+    let payload = data.data;
+
+    // Support both the old plain JSON format and the new compressed envelope.
+    if(payload && typeof payload === "object" && payload.__ananta_gzip){
+      const raw = await gunzipBase64(payload.payload);
+      payload = JSON.parse(raw);
+    }
+
+    remoteReadCache = payload;
+    remoteReadCacheAt = now;
+    remoteLastError = null;
+    return {ok:true,data:payload};
+  }catch(e){
+    remoteLastError = e;
+    showToast("⚠ Online database read failed: " + (e.message || ""));
+    return {ok:false,data:null,error:e};
+  }
+}
+
+async function remoteSaveDBNow(){
+  if(!supabaseClient || !currentServiceCenter || !DB) return false;
+
+  if(remoteSavePromise){
+    remoteSaveQueued = true;
+    return remoteSavePromise;
+  }
+
+  remoteSavePromise = (async()=>{
+    try{
+      const raw = stableJSONStringify(DB);
+      if(!raw) return false;
+
+      const hash = await sha256Hex(raw);
+
+      // Same content: don't send another PostgREST request.
+      if(hash === remoteLastSnapshotHash) return true;
+
+      let payload = raw;
+
+      // Compression can drastically reduce transfer when DB contains repeated
+      // JSON field names and transaction/complaint records.
+      if(canUseCompression()){
+        const packed = await gzipBase64(raw);
+        payload = {
+          __ananta_gzip: true,
+          version: 2,
+          payload: packed
+        };
+      }
+
+      const {error} = await supabaseClient
+        .from("app_data")
+        .upsert({
+          service_center_id: currentServiceCenter.id,
+          data: payload,
+          updated_at: new Date().toISOString()
+        }, {onConflict:"service_center_id"});
+
+      if(error) throw error;
+
+      remoteLastSnapshotHash = hash;
+      remoteReadCache = DB;
+      remoteReadCacheAt = Date.now();
+      remoteLastError = null;
+      return true;
+    }catch(e){
+      remoteLastError = e;
+      showToast("⚠ Online save failed: " + (e.message || ""));
+      return false;
+    }finally{
+      remoteSavePromise = null;
+      if(remoteSaveQueued){
+        remoteSaveQueued = false;
+        scheduleRemoteSave();
+      }
+    }
+  })();
+
+  return remoteSavePromise;
+}
+
+function scheduleRemoteSave(){
+  if(remoteSaveTimer) clearTimeout(remoteSaveTimer);
+  remoteSaveTimer = setTimeout(()=>{
+    remoteSaveTimer = null;
+    remoteSaveDBNow();
+  }, EGRESS_SAVE_DEBOUNCE);
+}
+
+function remoteSaveDB(){
+  // Local save remains immediate for offline safety.
+  // Network save is deliberately debounced.
+  scheduleRemoteSave();
+  return Promise.resolve(true);
+}
+
+function saveDB(){
+  localSave();
+  remoteSaveDB();
+  return true;
+}
+
+async function initOnlineDatabase(){
+  // Only one initial read. Subsequent renderAll() calls do not fetch the DB.
+  const result = await remoteFetchDB(true);
+
+  if(!result.ok){
+    DB = normalizeDB(loadDB() || seedDB());
+    localSave();
+    renderAll();
+    return;
+  }
+
+  if(result.data){
+    DB = normalizeDB(result.data);
+    localSave();
+    remoteReady = true;
+    remoteLastSnapshotHash = await sha256Hex(stableJSONStringify(DB));
+    renderAll();
+    showToast("✓ " + currentServiceCenter.name + " database connected");
+    return;
+  }
+
+  DB = normalizeDB(loadDB() || seedDB());
+  localSave();
+  await remoteSaveDBNow();
+  renderAll();
+  showToast("✓ Initial data uploaded online");
+}
+
+/* =========================================================
+   END LOW-EGRESS DATABASE SYNC V2
+   ========================================================= */
+
+/* =========================================================
+   DERIVED CALCULATIONS
+   ========================================================= */
+function calcTechFresh(){
+  const map = {};
+  DB.txns.forEach(t=>{
+    if(t.type==='issue'){
+      const k = [t.company,t.partNo,t.tech].join('|');
+      if(!map[k]) map[k] = {company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', tech:t.tech, qty:0};
+      map[k].qty += t.qty;
+    }
+    if(t.type==='use'){
+      const k = [t.company,t.partNo,t.tech].join('|');
+      if(!map[k]) map[k] = {company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', tech:t.tech, qty:0};
+      map[k].qty -= t.qty;
+    }
+  });
+  return map;
+}
+function calcTechDefective(){
+  const map = {};
+  DB.txns.forEach(t=>{
+    if(t.type==='use'){
+      const k = [t.company,t.partNo,t.tech].join('|');
+      if(!map[k]) map[k] = {company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', tech:t.tech, qty:0};
+      map[k].qty += t.qty;
+    }
+    if(t.type==='collect'){
+      const k = [t.company,t.partNo,t.tech].join('|');
+      if(!map[k]) map[k] = {company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', tech:t.tech, qty:0};
+      map[k].qty -= t.qty;
+    }
+  });
+  return map;
+}
+function calcCenterFresh(){
+  const map = {};
+  DB.txns.forEach(t=>{
+    const k=[t.company,t.partNo].join('|');
+    if(t.type==='receive'){
+      if(!map[k]) map[k]={company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', qty:0};
+      map[k].qty += t.qty;
+    }
+    if(t.type==='issue'){
+      if(!map[k]) map[k]={company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', qty:0};
+      map[k].qty -= t.qty;
+    }
+  });
+  return map;
+}
+function calcCenterDefective(){
+  const map = {};
+  DB.txns.forEach(t=>{
+    const k=[t.company,t.partNo].join('|');
+    if(t.type==='collect'){
+      if(!map[k]) map[k]={company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', qty:0};
+      map[k].qty += t.qty;
+    }
+    if(t.type==='return'){
+      if(!map[k]) map[k]={company:t.company, partNo:t.partNo, partName:t.partName, product:t.product, model:t.model||'', qty:0};
+      map[k].qty -= t.qty;
+    }
+  });
+  return map;
+}
+function calcTotalSent(){
+  const map = {};
+  DB.txns.forEach(t=>{ if(t.type==='return'){ const k=[t.company,t.partNo].join('|'); map[k]=(map[k]||0)+t.qty; } });
+  return map;
+}
+function calcTotalCredit(){
+  const map = {};
+  DB.txns.forEach(t=>{ if(t.type==='credit'){ const k=[t.company,t.partNo].join('|'); map[k]=(map[k]||0)+t.qty; } });
+  return map;
+}
+
+function partNameLookup(company, partNo){
+  const hit = DB.catalog.find(c=>c.company===company && c.partNo===partNo);
+  if(hit) return hit.partName;
+  const t = DB.txns.find(t=>t.company===company && t.partNo===partNo && t.partName);
+  return t ? t.partName : '';
+}
+function productLookup(company, partNo){
+  const hit = DB.catalog.find(c=>c.company===company && c.partNo===partNo);
+  if(hit) return hit.product;
+  const t = DB.txns.find(t=>t.company===company && t.partNo===partNo && t.product);
+  return t ? t.product : '';
+}
+function modelLookup(company, partNo){
+  const hit = DB.catalog.find(c=>c.company===company && c.partNo===partNo);
+  if(hit) return hit.model || '';
+  const t = DB.txns.find(t=>t.company===company && t.partNo===partNo && t.model);
+  return t ? t.model : '';
+}
+
+function catalogProductsForCompany(company){
+  return [...new Set(DB.catalog.filter(c=>c.company===company).map(c=>c.product))].sort();
+}
+function catalogModelsForProduct(company, product){
+  return [...new Set(DB.catalog.filter(c=>c.company===company && c.product===product).map(c=>c.model||''))].sort();
+}
+function catalogPartsForModel(company, product, model){
+  return DB.catalog.filter(c=>c.company===company && c.product===product && (c.model||'')===(model||''));
+}
+
+function availableFreshAtCenter(company){
+  return Object.values(calcCenterFresh()).filter(r=>r.company===company && r.qty>0);
+}
+function availableFreshWithTechnician(company, tech){
+  return Object.values(calcTechFresh()).filter(r=>r.company===company && r.tech===tech && r.qty>0);
+}
+function availableDefectiveWithTechnician(company, tech){
+  return Object.values(calcTechDefective()).filter(r=>r.company===company && r.tech===tech && r.qty>0);
+}
+function availableDefectiveAtCenter(company){
+  return Object.values(calcCenterDefective()).filter(r=>r.company===company && r.qty>0);
+}
+
+function calcTechCombined(){
+  const fresh = calcTechFresh();
+  const def = calcTechDefective();
+  const map = {};
+  Object.values(fresh).forEach(r=>{
+    if(r.qty===0) return;
+    const k=[r.company,r.partNo,r.tech].join('|');
+    if(!map[k]) map[k]={company:r.company, partNo:r.partNo, partName:r.partName, product:r.product, model:r.model||'', tech:r.tech, fresh:0, defective:0};
+    map[k].fresh = r.qty;
+  });
+  Object.values(def).forEach(r=>{
+    if(r.qty===0) return;
+    const k=[r.company,r.partNo,r.tech].join('|');
+    if(!map[k]) map[k]={company:r.company, partNo:r.partNo, partName:r.partName, product:r.product, model:r.model||'', tech:r.tech, fresh:0, defective:0};
+    map[k].defective = r.qty;
+  });
+  return Object.values(map).filter(r=>r.fresh>0 || r.defective>0);
+}
+function calcCenterCombined(){
+  const fresh = calcCenterFresh();
+  const def = calcCenterDefective();
+  const keys = new Set([...Object.keys(fresh), ...Object.keys(def)]);
+  const rows = [...keys].map(k=>{
+    const [company,partNo] = k.split('|');
+    return {
+      company, partNo,
+      partName: fresh[k]?.partName || def[k]?.partName || partNameLookup(company,partNo),
+      product: fresh[k]?.product || def[k]?.product || productLookup(company,partNo),
+      model: fresh[k]?.model || def[k]?.model || modelLookup(company,partNo),
+      fresh: Math.max(fresh[k]?.qty||0, 0),
+      defective: Math.max(def[k]?.qty||0, 0)
+    };
+  });
+  return rows.filter(r=>r.fresh>0 || r.defective>0);
+}
+
+/* =========================================================
+   UI TABS & MODALS
+   ========================================================= */
+document.getElementById('tabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  switchTab(btn.dataset.tab);
+});
+function switchTab(tabName){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.style.display='none');
+  document.getElementById('tab-'+tabName).style.display='block';
+  renderAll();
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function openModal(title, text, onConfirm){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalText').textContent = text;
+  const btn = document.getElementById('modalConfirmBtn');
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  newBtn.addEventListener('click', ()=>{ onConfirm(); closeModal(); });
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeModal(){ document.getElementById('confirmModal').classList.remove('show'); }
+
+function deleteTxn(id){
+  openModal("Entry Delete Karein?", "Ye action wapas nahi ho sakta.", ()=>{
+    DB.txns = DB.txns.filter(t=>t.id!==id);
+    saveDB();
+    renderAll();
+    showToast("Entry delete ho gayi");
+  });
+}
+function deleteCompany(id){
+  openModal("Company Delete Karein?", "Company delete hone se dropdowns se hat jayegi.", ()=>{
+    DB.companies = DB.companies.filter(c=>c.id!==id);
+    saveDB();
+    renderAll();
+    showToast("Company delete ho gayi");
+  });
+}
+function deleteCatalogItem(id){
+  openModal("Catalog Item Delete Karein?", "Is part ka master data hat jayega.", ()=>{
+    DB.catalog = DB.catalog.filter(c=>c.id!==id);
+    saveDB();
+    renderAll();
+    showToast("Catalog item delete ho gaya");
+  });
+}
+function deleteTechnician(id){
+  openModal("Technician Delete Karein?", "Technician list se hat jayega.", ()=>{
+    DB.technicians = DB.technicians.filter(t=>t.id!==id);
+    saveDB();
+    renderAll();
+    showToast("Technician delete ho gaya");
+  });
+}
+
+function openTechnicianAuthModal(id){
+  const t=DB.technicians.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  const hasAuth=!!t.auth_user_id;
+  const body=`
+    <div class="field wide"><label>Technician Name</label><input id="ta_name" value="${escapeHtml(t.name||'')}"></div>
+    <div class="field"><label>Mobile</label><input id="ta_phone" value="${escapeHtml(t.phone||'')}"></div>
+    <div class="field"><label>Login Email</label><input id="ta_email" type="email" value="${escapeHtml(t.email||'')}"></div>
+    <div class="field wide"><label>${hasAuth?'New Password (optional)':'Create Login Password'}</label><input id="ta_password" type="password" placeholder="Minimum 6 characters"></div>
+    <div class="field wide"><small style="color:#667">${hasAuth?'Email change kar sakte hain. Password blank chhodne par current password same rahega.':'Is existing technician ko Auth login dene ke liye email aur password zaroori hai.'}</small></div>`;
+  document.getElementById('editModalTitle').textContent=hasAuth?'Edit Technician Login':'Add Technician Login';
+  document.getElementById('editModalBody').innerHTML=body;
+  const saveBtn=document.getElementById('editModalSaveBtn');
+  const nb=saveBtn.cloneNode(true);saveBtn.parentNode.replaceChild(nb,saveBtn);
+  nb.textContent=hasAuth?'Save Login Details':'Create Login';
+  nb.addEventListener('click',()=>saveTechnicianAuth(id));
+  document.getElementById('editModal').classList.add('show');
+}
+
+async function saveTechnicianAuth(id){
+  const t=DB.technicians.find(x=>String(x.id)===String(id));
+  if(!t)return;
+
+  const name=document.getElementById('ta_name').value.trim();
+  const phone=document.getElementById('ta_phone').value.trim();
+  const email=document.getElementById('ta_email').value.trim().toLowerCase();
+  const password=document.getElementById('ta_password').value;
+
+  if(!name)return showToast('⚠ Technician name required');
+  if(!email)return showToast('⚠ Login Email required');
+  if(!currentServiceCenter||!supabaseClient)return showToast('⚠ Service Center login/database connected nahi hai');
+
+  const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+  if(sessionError||!sessionData?.session)return showToast('⚠ Login session expire ho gaya');
+
+  const norm=v=>String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const phoneNorm=v=>String(v||'').replace(/\D/g,'');
+
+  try{
+    showToast('⏳ Technician database record verify ho raha hai...');
+
+    let realTech=null;
+
+    // 1) If the local record already has the real technician code, use it.
+    if(t.technician_code){
+      const {data,error}=await supabaseClient
+        .from('technicians')
+        .select('id,service_center_id,technician_code,name,phone,email,auth_user_id,is_active')
+        .eq('service_center_id',currentServiceCenter.id)
+        .eq('technician_code',t.technician_code)
+        .maybeSingle();
+
+      if(error)throw error;
+      if(data)realTech=data;
+    }
+
+    // 2) Load the technicians of this Service Center and resolve legacy
+    // records by phone/name. This handles old records whose name/phone
+    // was entered differently from the current local list.
+    if(!realTech){
+      const {data,error}=await supabaseClient
+        .from('technicians')
+        .select('id,service_center_id,technician_code,name,phone,email,auth_user_id,is_active')
+        .eq('service_center_id',currentServiceCenter.id);
+
+      if(error)throw error;
+
+      const rows=Array.isArray(data)?data:[];
+
+      const localName=norm(name);
+      const localPhone=phoneNorm(phone);
+      const localFirst=localName.split(/\s+/)[0]||localName;
+
+      // Exact phone is the strongest match.
+      let matches=rows.filter(x=>localPhone && phoneNorm(x.phone)===localPhone);
+
+      // Exact normalized name.
+      if(matches.length===0){
+        matches=rows.filter(x=>norm(x.name)===localName);
+      }
+
+      // Legacy records often contain only the first name
+      // (e.g. local "Vivek Yadav" vs DB "Vivek").
+      if(matches.length===0 && localFirst){
+        matches=rows.filter(x=>{
+          const dbName=norm(x.name);
+          const dbFirst=dbName.split(/\s+/)[0]||dbName;
+          return dbName===localFirst || dbFirst===localFirst ||
+                 dbName.startsWith(localFirst) || localFirst.startsWith(dbName);
+        });
+      }
+
+      // If still not found, compare individual name tokens.
+      if(matches.length===0){
+        const tokens=localName.split(/\s+/).filter(Boolean);
+        matches=rows.filter(x=>{
+          const db=norm(x.name);
+          return tokens.some(tok=>tok.length>=4 && (db===tok || db.startsWith(tok) || tok.startsWith(db)));
+        });
+      }
+
+      if(matches.length===1){
+        realTech=matches[0];
+      }else if(matches.length>1){
+        // Prefer an exact phone/name combination when multiple legacy
+        // records happen to share a similar name.
+        const exact=matches.find(x=>
+          (localPhone && phoneNorm(x.phone)===localPhone) ||
+          norm(x.name)===localName
+        );
+        if(exact) realTech=exact;
+      }
+    }
+
+    if(!realTech){
+      throw new Error(
+        `Technician database record nahi mila. App name "${name}" aur mobile "${phone}" hai.`
+      );
+    }
+
+    if(realTech.is_active===false){
+      throw new Error('Ye technician inactive hai.');
+    }
+
+    const action=realTech.auth_user_id?'update':'link';
+
+    if(!password || password.length<6){
+      throw new Error('Login password kam se kam 6 characters ka hona chahiye.');
+    }
+
+    showToast(
+      action==='update'
+        ? '⏳ Existing technician ka password update ho raha hai...'
+        : '⏳ Old technician ko login account se link kiya ja raha hai...'
+    );
+
+    const r=await fetch(`${SUPABASE_URL}/functions/v1/manage-technician-auth`,{
+      method:'POST',
+      mode:'cors',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${sessionData.session.access_token}`
+      },
+      body:JSON.stringify({
+        action,
+        technician_id:realTech.id,
+        name,
+        phone,
+        email,
+        password,
+        service_center_id:currentServiceCenter.id
+      })
+    });
+
+    const responseText=await r.text();
+    let result={};
+    try{result=responseText?JSON.parse(responseText):{}}catch(_){}
+
+    if(!r.ok||!result.success){
+      throw new Error(result.error||result.message||responseText||`HTTP ${r.status}`);
+    }
+
+    const updated=result.technician||{};
+
+    Object.assign(t,{
+      id:updated.id||realTech.id||t.id,
+      name:updated.name||name||realTech.name||t.name,
+      phone:updated.phone||phone||realTech.phone||t.phone,
+      email:updated.email||email||realTech.email||t.email,
+      auth_user_id:updated.auth_user_id||realTech.auth_user_id||t.auth_user_id||null,
+      technician_code:updated.technician_code||realTech.technician_code||t.technician_code||''
+    });
+
+    await saveDB();
+    closeEditModal();
+    renderAll();
+
+    showToast(
+      action==='update'
+        ? '✓ Technician login/password updated successfully'
+        : '✓ Old technician login created successfully'
+    );
+
+  }catch(e){
+    console.error('Technician login update failed:',e);
+    showToast('⚠ '+(e.message||'Technician login update failed'));
+  }
+}
+
+function closeEditModal(){ document.getElementById('editModal').classList.remove('show'); }
+
+function fieldHtml(label, id, type, value, options){
+  value = value===undefined || value===null ? '' : value;
+  if(type==='select'){
+    const opts = options.map(o=>`<option value="${escapeHtml(o.value)}" ${o.value===value?'selected':''}>${escapeHtml(o.label)}</option>`).join('');
+    return `<div class="field"><label>${escapeHtml(label)}</label><select id="${id}">${opts}</select></div>`;
+  }
+  return `<div class="field"><label>${escapeHtml(label)}</label><input type="${type}" id="${id}" value="${escapeHtml(value)}"></div>`;
+}
+
+function openEditTxnModal(id){
+  const t = DB.txns.find(x=>x.id===id);
+  if(!t) return;
+  const companyOpts = DB.companies.map(c=>({value:c.name,label:c.name}));
+  const techOpts = DB.technicians.map(x=>({value:x.name,label:x.name}));
+  let bodyHtml = '';
+  let title = 'Edit Entry';
+
+  const baseFields = fieldHtml('Date','em_date','date',t.date) +
+    fieldHtml('Company','em_company','select',t.company,companyOpts) +
+    fieldHtml('Product','em_product','text',t.product) +
+    fieldHtml('Product Model','em_model','text',t.model||'') +
+    fieldHtml('Part Number','em_partNo','text',t.partNo) +
+    fieldHtml('Part Name','em_partName','text',t.partName);
+
+  if(t.type==='receive'){
+    bodyHtml = baseFields + fieldHtml('Quantity','em_qty','number',t.qty) + fieldHtml('Remarks','em_remarks','text',t.remarks);
+  } else if(t.type==='issue'){
+    bodyHtml = baseFields + fieldHtml('Technician','em_tech','select',t.tech,techOpts) + fieldHtml('Quantity','em_qty','number',t.qty) + fieldHtml('Remarks','em_remarks','text',t.remarks);
+  } else if(t.type==='use'){
+    bodyHtml = baseFields + fieldHtml('Technician','em_tech','select',t.tech,techOpts) + fieldHtml('Complaint / Job ID','em_complaint','text',t.complaint) + fieldHtml('Customer Name','em_customer','text',t.customer) + fieldHtml('Qty Used','em_qty','number',t.qty);
+  } else if(t.type==='collect'){
+    bodyHtml = baseFields + fieldHtml('Technician','em_tech','select',t.tech,techOpts) + fieldHtml('Qty Collected','em_qty','number',t.qty) + fieldHtml('Remarks','em_remarks','text',t.remarks);
+  } else if(t.type==='return'){
+    bodyHtml = baseFields + fieldHtml('Qty Sent','em_qty','number',t.qty) + fieldHtml('RMA / Ref No.','em_rma','text',t.rma);
+  } else if(t.type==='credit'){
+    bodyHtml = baseFields + fieldHtml('Qty Credited','em_qty','number',t.qty) + fieldHtml('RMA / Ref No.','em_rma','text',t.rma);
+  }
+
+  document.getElementById('editModalTitle').textContent = title;
+  document.getElementById('editModalBody').innerHTML = bodyHtml;
+  const saveBtn = document.getElementById('editModalSaveBtn');
+  const newBtn = saveBtn.cloneNode(true);
+  saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+  newBtn.addEventListener('click', ()=> saveTxnEdit(id));
+  document.getElementById('editModal').classList.add('show');
+}
+
+function saveTxnEdit(id){
+  const t = DB.txns.find(x=>x.id===id);
+  if(!t) return;
+  const getVal = (elId)=> document.getElementById(elId) ? document.getElementById(elId).value : undefined;
+
+  const qtyRaw = getVal('em_qty');
+  const qty = qtyRaw!==undefined ? parseInt(qtyRaw,10) : t.qty;
+  if(qtyRaw!==undefined && (!qty || qty<1)){ showToast("⚠ Sahi Quantity bharein"); return; }
+
+  t.date = getVal('em_date') ?? t.date;
+  t.company = getVal('em_company') ?? t.company;
+  t.partNo = (getVal('em_partNo') ?? t.partNo).trim();
+  t.partName = (getVal('em_partName') ?? (t.partName || '')).trim();
+  t.product = (getVal('em_product') ?? (t.product || '')).trim();
+  t.model = (getVal('em_model') ?? (t.model || '')).trim();
+  if(getVal('em_tech')!==undefined) t.tech = getVal('em_tech');
+  if(getVal('em_complaint')!==undefined) t.complaint = getVal('em_complaint').trim();
+  if(getVal('em_customer')!==undefined) t.customer = getVal('em_customer').trim();
+  if(getVal('em_remarks')!==undefined) t.remarks = getVal('em_remarks').trim();
+  if(getVal('em_rma')!==undefined) t.rma = getVal('em_rma').trim();
+  t.qty = qty;
+
+  saveDB();
+  closeEditModal();
+  renderAll();
+  showToast("✓ Entry update ho gayi");
+}
+
+/* =========================================================
+   DROPDOWN POPULATORS & CASCADE
+   ========================================================= */
+function escapeHtml(s){
+  return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function companyOptionsHTML(){
+  return DB.companies.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+}
+function technicianOptionsHTML(){
+  return DB.technicians.map(t=>`<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
+}
+function fillAllCompanySelects(){
+  const withBlank = ['ss_companyFilter','log_company','dash_companyFilter','cat_companyFilter'];
+  const plain = ['r_company','i_company','u_company','cl_company','s_company','c_company','cat_company'];
+  withBlank.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const first = el.options[0] ? el.options[0].outerHTML : '<option value="">Sab</option>';
+    const prev = el.value;
+    el.innerHTML = first + companyOptionsHTML();
+    if([...el.options].some(o=>o.value===prev)) el.value = prev;
+  });
+  plain.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const prev = el.value;
+    el.innerHTML = companyOptionsHTML();
+    if([...el.options].some(o=>o.value===prev)) el.value = prev;
+  });
+}
+function fillAllTechnicianSelects(){
+  const plain = ['i_tech'];
+  plain.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const prev = el.value;
+    if(DB.technicians.length===0){ el.innerHTML = '<option value="">-- Pehle Technician add karein --</option>'; return; }
+    el.innerHTML = technicianOptionsHTML();
+    if([...el.options].some(o=>o.value===prev)) el.value = prev;
+  });
+}
+
+/* Receive Cascade */
+function refreshReceiveProductOptions(){
+  const company = document.getElementById('r_company').value;
+  const el = document.getElementById('r_product');
+  const products = catalogProductsForCompany(company);
+  const prev = el.value;
+  if(products.length===0){ el.innerHTML = '<option value="">-- Pehle Catalog add karein --</option>'; refreshReceiveModelOptions(); return; }
+  el.innerHTML = products.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  if(products.includes(prev)) el.value = prev;
+  refreshReceiveModelOptions();
+}
+function refreshReceiveModelOptions(){
+  const company = document.getElementById('r_company').value;
+  const product = document.getElementById('r_product').value;
+  const el = document.getElementById('r_model');
+  const models = catalogModelsForProduct(company, product);
+  const prev = el.value;
+  if(models.length===0){ el.innerHTML = '<option value="">-- Koi Model Nahi --</option>'; refreshReceivePartOptions(); return; }
+  el.innerHTML = models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m||'Default')}</option>`).join('');
+  if(models.includes(prev)) el.value = prev;
+  refreshReceivePartOptions();
+}
+function refreshReceivePartOptions(){
+  const company = document.getElementById('r_company').value;
+  const product = document.getElementById('r_product').value;
+  const model = document.getElementById('r_model').value;
+  const el = document.getElementById('r_part');
+  const parts = catalogPartsForModel(company, product, model);
+  if(parts.length===0){ el.innerHTML = '<option value="">-- Koi part nahi --</option>'; return; }
+  el.innerHTML = parts.map(p=>`<option value="${escapeHtml(p.partNo)}">${escapeHtml(p.partNo)} — ${escapeHtml(p.partName)}</option>`).join('');
+}
+
+/* Issue Cascade */
+function refreshIssueProductOptions(){
+  const company = document.getElementById('i_company').value;
+  const el = document.getElementById('i_product');
+  const stock = availableFreshAtCenter(company);
+  const products = [...new Set(stock.map(r=>r.product).filter(Boolean))].sort();
+  const prev = el.value;
+  if(products.length===0){ el.innerHTML = '<option value="">-- Koi Fresh stock nahi --</option>'; refreshIssueModelOptions(); return; }
+  el.innerHTML = products.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  if(products.includes(prev)) el.value = prev;
+  refreshIssueModelOptions();
+}
+function refreshIssueModelOptions(){
+  const company = document.getElementById('i_company').value;
+  const product = document.getElementById('i_product').value;
+  const el = document.getElementById('i_model');
+  const stock = availableFreshAtCenter(company).filter(r=>r.product===product);
+  const models = [...new Set(stock.map(r=>r.model||''))].sort();
+  const prev = el.value;
+  if(models.length===0){ el.innerHTML = '<option value="">-- Koi Model nahi --</option>'; refreshIssuePartOptions(); return; }
+  el.innerHTML = models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m||'Default')}</option>`).join('');
+  if(models.includes(prev)) el.value = prev;
+  refreshIssuePartOptions();
+}
+function refreshIssuePartOptions(){
+  const company = document.getElementById('i_company').value;
+  const product = document.getElementById('i_product').value;
+  const model = document.getElementById('i_model').value;
+  const el = document.getElementById('i_part');
+  let stock = availableFreshAtCenter(company).filter(r=>r.product===product && (r.model||'')===(model||''));
+  if(stock.length===0){ el.innerHTML = '<option value="">-- Fresh stock nahi hai --</option>'; return; }
+  el.innerHTML = stock.map(r=>`<option value="${escapeHtml(r.partNo)}" data-max="${r.qty}">${escapeHtml(r.partNo)} — ${escapeHtml(r.partName||'')} (Fresh: ${r.qty})</option>`).join('');
+}
+
+/* Use Cascade */
+function fillTechDropdownForUse(){
+  const company = document.getElementById('u_company').value;
+  const techSel = document.getElementById('u_tech');
+  const fresh = Object.values(calcTechFresh()).filter(r=>r.company===company && r.qty>0);
+  const techs = [...new Set(fresh.map(r=>r.tech))];
+  const prev = techSel.value;
+  techSel.innerHTML = techs.length ? techs.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('') : '<option value="">-- Koi Fresh stock nahi --</option>';
+  if(techs.includes(prev)) techSel.value = prev;
+}
+function refreshUsePartOptions(){
+  const company = document.getElementById('u_company').value;
+  const tech = document.getElementById('u_tech').value;
+  const el = document.getElementById('u_part');
+  const stock = availableFreshWithTechnician(company, tech);
+  if(stock.length===0){ el.innerHTML = '<option value="">-- Stock nahi hai --</option>'; return; }
+  el.innerHTML = stock.map(r=>`<option value="${escapeHtml(r.partNo)}" data-max="${r.qty}">${escapeHtml(r.product)} ${r.model?'('+r.model+') ':''}| ${escapeHtml(r.partNo)} — ${escapeHtml(r.partName||'')} (Fresh: ${r.qty})</option>`).join('');
+}
+
+/* Collect Cascade */
+function fillTechDropdownForCollect(){
+  const company = document.getElementById('cl_company').value;
+  const techSel = document.getElementById('cl_tech');
+  const def = Object.values(calcTechDefective()).filter(r=>r.company===company && r.qty>0);
+  const techs = [...new Set(def.map(r=>r.tech))];
+  const prev = techSel.value;
+  techSel.innerHTML = techs.length ? techs.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('') : '<option value="">-- Defective stock nahi --</option>';
+  if(techs.includes(prev)) techSel.value = prev;
+}
+function refreshCollectOptions(){
+  fillTechDropdownForCollect();
+  const company = document.getElementById('cl_company').value;
+  const tech = document.getElementById('cl_tech').value;
+  const el = document.getElementById('cl_part');
+  const stock = availableDefectiveWithTechnician(company, tech);
+  if(stock.length===0){ el.innerHTML = '<option value="">-- Defective stock nahi hai --</option>'; return; }
+  el.innerHTML = stock.map(r=>`<option value="${escapeHtml(r.partNo)}" data-max="${r.qty}">${escapeHtml(r.product)} ${r.model?'('+r.model+') ':''}| ${escapeHtml(r.partNo)} — ${escapeHtml(r.partName||'')} (Defective: ${r.qty})</option>`).join('');
+}
+
+function refreshReturnPartOptions(){
+  const company = document.getElementById('s_company').value;
+  const el = document.getElementById('s_part');
+  const stock = availableDefectiveAtCenter(company);
+  if(stock.length===0){ el.innerHTML = '<option value="">-- Koi defective stock nahi --</option>'; return; }
+  el.innerHTML = stock.map(r=>`<option value="${escapeHtml(r.partNo)}" data-max="${r.qty}">${escapeHtml(r.product)} ${r.model?'('+r.model+') ':''}| ${escapeHtml(r.partNo)} — ${escapeHtml(r.partName||'')} (Defective: ${r.qty})</option>`).join('');
+}
+function refreshCreditPartOptions(){
+  const company = document.getElementById('c_company').value;
+  const el = document.getElementById('c_part');
+  const parts = DB.catalog.filter(c=>c.company===company);
+  if(parts.length===0){ el.innerHTML = '<option value="">-- Pehle Catalog mein part add karein --</option>'; return; }
+  el.innerHTML = parts.map(p=>`<option value="${escapeHtml(p.partNo)}">${escapeHtml(p.product)} ${p.model?'('+p.model+') ':''}| ${escapeHtml(p.partNo)} — ${escapeHtml(p.partName)}</option>`).join('');
+}
+
+function fillTechFilterDropdown(){
+  const el = document.getElementById('dash_techFilter');
+  const prev = el.value;
+  const techs = DB.technicians.map(t=>t.name).sort();
+  el.innerHTML = '<option value="">Sab Technicians</option>' + techs.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  if(techs.includes(prev)) el.value = prev;
+}
+function fillProductFilterDropdown(){
+  const el = document.getElementById('ss_productFilter');
+  const prev = el.value;
+  const products = [...new Set(DB.catalog.map(c=>c.product))].sort();
+  el.innerHTML = '<option value="">Sab Products</option>' + products.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  if(products.includes(prev)) el.value = prev;
+  updateStockSummaryModelFilter();
+}
+function updateStockSummaryModelFilter(){
+  const prod = document.getElementById('ss_productFilter').value;
+  const el = document.getElementById('ss_modelFilter');
+  const prev = el.value;
+  let models = DB.catalog;
+  if(prod) models = models.filter(c=>c.product===prod);
+  const modelList = [...new Set(models.map(c=>c.model||''))].sort();
+  el.innerHTML = '<option value="">Sab Models</option>' + modelList.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m||'Default')}</option>`).join('');
+  if(modelList.includes(prev)) el.value = prev;
+}
+
+function fillCatalogProductDatalist(){
+  const products = [...new Set(DB.catalog.map(c=>c.product))];
+  document.getElementById('cat_productList').innerHTML = products.map(p=>`<option value="${escapeHtml(p)}">`).join('');
+  const models = [...new Set(DB.catalog.map(c=>c.model||''))];
+  document.getElementById('cat_modelList').innerHTML = models.map(m=>`<option value="${escapeHtml(m)}">`).join('');
+}
+
+/* =========================================================
+   FORM SUBMISSIONS
+   ========================================================= */
+function submitReceive(){
+  const company = document.getElementById('r_company').value;
+  const product = document.getElementById('r_product').value;
+  const model = document.getElementById('r_model').value;
+  const partNo = document.getElementById('r_part').value;
+  const partName = partNameLookup(company, partNo);
+  const qty = parseInt(document.getElementById('r_qty').value,10);
+  const date = document.getElementById('r_date').value || todayStr();
+  const remarks = document.getElementById('r_remarks').value.trim();
+
+  if(!company){ showToast("⚠ Company chunein"); return; }
+  if(!product){ showToast("⚠ Product chunein"); return; }
+  if(!partNo){ showToast("⚠ Part chunein"); return; }
+  if(!qty || qty<1){ showToast("⚠ Sahi Quantity bharein"); return; }
+
+  addTxn({type:'receive', date, company, product, model, partNo, partName, qty, remarks});
+  document.getElementById('r_qty').value=1;
+  document.getElementById('r_remarks').value='';
+  showToast("✓ Fresh stock Service Center mein add ho gaya");
+  renderAll();
+}
+
+function submitIssue(){
+  const company = document.getElementById('i_company').value;
+  const partSel = document.getElementById('i_part');
+  const partNo = partSel.value;
+  const max = parseInt(partSel.selectedOptions[0]?.dataset.max || 0,10);
+  const partName = partNameLookup(company, partNo);
+  const product = productLookup(company, partNo);
+  const model = modelLookup(company, partNo);
+  const tech = document.getElementById('i_tech').value;
+  const qty = parseInt(document.getElementById('i_qty').value,10);
+  const date = document.getElementById('i_date').value || todayStr();
+  const remarks = document.getElementById('i_remarks').value.trim();
+
+  if(!company){ showToast("⚠ Company chunein"); return; }
+  if(!partNo){ showToast("⚠ Fresh stock available nahi"); return; }
+  if(!tech){ showToast("⚠ Technician chunein"); return; }
+  if(!qty || qty<1){ showToast("⚠ Sahi Quantity bharein"); return; }
+  if(qty>max){ showToast(`⚠ Sirf ${max} Fresh available hai`); return; }
+
+  addTxn({type:'issue', date, company, product, model, partNo, partName, tech, qty, remarks});
+  document.getElementById('i_qty').value=1;
+  document.getElementById('i_remarks').value='';
+  showToast("✓ Part technician ko Fresh issue ho gaya");
+  renderAll();
+}
+
+function submitUse(){
+  const company = document.getElementById('u_company').value;
+  const tech = document.getElementById('u_tech').value;
+  const partSel = document.getElementById('u_part');
+  const partNo = partSel.value;
+  const max = parseInt(partSel.selectedOptions[0]?.dataset.max || 0,10);
+  const partName = partNameLookup(company, partNo);
+  const product = productLookup(company, partNo);
+  const model = modelLookup(company, partNo);
+  const complaint = document.getElementById('u_complaint').value.trim();
+  const customer = document.getElementById('u_customer').value.trim();
+  const qty = parseInt(document.getElementById('u_qty').value,10);
+  const date = document.getElementById('u_date').value || todayStr();
+
+  if(!company){ showToast("⚠ Company chunein"); return; }
+  if(!tech){ showToast("⚠ Technician chunein"); return; }
+  if(!partNo){ showToast("⚠ Fresh stock nahi hai"); return; }
+  if(!complaint){ showToast("⚠ Complaint ID bharein"); return; }
+  if(!qty || qty<1){ showToast("⚠ Sahi Quantity bharein"); return; }
+  if(qty>max){ showToast(`⚠ Sirf ${max} Fresh available hai`); return; }
+
+  addTxn({type:'use', date, company, product, model, partNo, partName, tech, complaint, customer, qty});
+  document.getElementById('u_complaint').value='';
+  document.getElementById('u_customer').value='';
+  document.getElementById('u_qty').value=1;
+  showToast("✓ Use ho gaya — Fresh se Defective ban gaya");
+  renderAll();
+}
+
+function submitCollect(){
+  const company = document.getElementById('cl_company').value;
+  const tech = document.getElementById('cl_tech').value;
+  const partSel = document.getElementById('cl_part');
+  const partNo = partSel.value;
+  const max = parseInt(partSel.selectedOptions[0]?.dataset.max || 0,10);
+  const partName = partNameLookup(company, partNo);
+  const product = productLookup(company, partNo);
+  const model = modelLookup(company, partNo);
+  const qty = parseInt(document.getElementById('cl_qty').value,10);
+  const date = document.getElementById('cl_date').value || todayStr();
+  const remarks = document.getElementById('cl_remarks').value.trim();
+
+  if(!company){ showToast("⚠ Company chunein"); return; }
+  if(!tech){ showToast("⚠ Technician chunein"); return; }
+  if(!partNo){ showToast("⚠ Defective stock nahi hai"); return; }
+  if(!qty || qty<1){ showToast("⚠ Sahi Quantity bharein"); return; }
+  if(qty>max){ showToast(`⚠ Sirf ${max} Defective hai`); return; }
+
+  addTxn({type:'collect', date, company, product, model, partNo, partName, tech, qty, remarks});
+  document.getElementById('cl_qty').value=1;
+  document.getElementById('cl_remarks').value='';
+  showToast("✓ Defective collect ho gaya");
+  renderAll();
+}
+
+function submitReturn(){
+  const company = document.getElementById('s_company').value;
+  const partSel = document.getElementById('s_part');
+  const partNo = partSel.value;
+  const max = parseInt(partSel.selectedOptions[0]?.dataset.max || 0,10);
+  const partName = partNameLookup(company, partNo);
+  const product = productLookup(company, partNo);
+  const model = modelLookup(company, partNo);
+  const qty = parseInt(document.getElementById('s_qty').value,10);
+  const date = document.getElementById('s_date').value || todayStr();
+  const rma = document.getElementById('s_rma').value.trim();
+
+  if(!company){ showToast("⚠ Company chunein"); return; }
+  if(!partNo){ showToast("⚠ Defective stock nahi hai"); return; }
+  if(!qty || qty<1){ showToast("⚠ Sahi Quantity bharein"); return; }
+  if(qty>max){ showToast(`⚠ Sirf ${max} defective hai`); return; }
+
+  addTxn({type:'return', date, company, product, model, partNo, partName, qty, rma});
+  document.getElementById('s_qty').value=1;
+  document.getElementById('s_rma').value='';
+  showToast("✓ Company ko return mark ho gaya");
+  renderAll();
+}
+
+function submitCredit(){
+  const company = document.getElementById('c_company').value;
+  const rma = document.getElementById('c_rma').value.trim();
+  const partNo = document.getElementById('c_part').value;
+  const partName = partNameLookup(company, partNo);
+  const product = productLookup(company, partNo);
+  const model = modelLookup(company, partNo);
+  const qty = parseInt(document.getElementById('c_qty').value,10);
+  const date = document.getElementById('c_date').value || todayStr();
+
+  if(!company){ showToast("⚠ Company chunein"); return; }
+  if(!partNo){ showToast("⚠ Part chunein"); return; }
+  if(!qty || qty<1){ showToast("⚠ Sahi Quantity bharein"); return; }
+
+  addTxn({type:'credit', date, company, product, model, partNo, partName, qty, rma});
+  document.getElementById('c_rma').value='';
+  document.getElementById('c_qty').value=1;
+  showToast("✓ Credit/Replacement save ho gaya");
+  renderAll();
+}
+
+function submitCompany(){
+  const name = document.getElementById('co_name').value.trim();
+  const contact = document.getElementById('co_contact').value.trim();
+  const phone = document.getElementById('co_phone').value.trim();
+  const notes = document.getElementById('co_notes').value.trim();
+  if(!name){ showToast("⚠ Company ka naam bharein"); return; }
+  if(DB.companies.some(c=>c.name.toLowerCase()===name.toLowerCase())){ showToast("⚠ Company pehle se hai"); return; }
+  DB.companies.push({id:uid(), name, contact, phone, notes});
+  saveDB();
+  document.getElementById('co_name').value='';
+  document.getElementById('co_contact').value='';
+  document.getElementById('co_phone').value='';
+  document.getElementById('co_notes').value='';
+  showToast("✓ Company add ho gayi");
+  renderAll();
+}
+
+function submitCatalog(){
+  try{
+    const company = document.getElementById('cat_company').value;
+    const product = document.getElementById('cat_product').value.trim();
+    const model = document.getElementById('cat_model').value.trim();
+    const partNo = document.getElementById('cat_partno').value.trim();
+    const partName = document.getElementById('cat_partname').value.trim();
+
+    if(!company){ showToast("⚠ Company chunein"); return; }
+    if(!product){ showToast("⚠ Product ka naam bharein"); return; }
+    if(!partNo){ showToast("⚠ Part Number bharein"); return; }
+    if(!partName){ showToast("⚠ Part Name bharein"); return; }
+
+    const duplicate = DB.catalog.some(c =>
+      String(c.company||'').trim().toLowerCase() === company.toLowerCase() &&
+      String(c.partNo||'').trim().toLowerCase() === partNo.toLowerCase()
+    );
+    if(duplicate){
+      showToast("⚠ Ye Part Number is Company ke liye pehle se hai");
+      return;
+    }
+
+    DB.catalog.push({id:uid(), company, product, model, partNo, partName});
+    saveDB();
+
+    document.getElementById('cat_product').value='';
+    document.getElementById('cat_model').value='';
+    document.getElementById('cat_partno').value='';
+    document.getElementById('cat_partname').value='';
+
+    renderAll();
+    showToast("✓ Catalog mein part add ho gaya");
+  }catch(e){
+    console.error("Catalog add failed", e);
+    showToast("⚠ Part add nahi hua: " + (e.message || "Unknown error"));
+  }
+}
+
+async function submitTechnician(){
+  const name = document.getElementById('tech_name').value.trim();
+  const phone = document.getElementById('tech_phone').value.trim();
+  const email = document.getElementById('tech_email').value.trim().toLowerCase();
+  const password = document.getElementById('tech_password').value;
+  const notes = document.getElementById('tech_notes').value.trim();
+
+  if(!name){ showToast("⚠ Technician ka naam bharein"); return; }
+  if(!email){ showToast("⚠ Login Email bharein"); return; }
+  if(!password || password.length < 6){ showToast("⚠ Password kam se kam 6 characters ka ho"); return; }
+  if(!currentServiceCenter || !supabaseClient){
+    showToast("⚠ Service Center login/database connected nahi hai");
+    return;
+  }
+  if(!currentServiceCenter.id){
+    showToast("⚠ Service Center ID nahi mila. Please logout karke login karein.");
+    return;
+  }
+  if(DB.technicians.some(t=>String(t.email||'').trim().toLowerCase()===email)){
+    showToast("⚠ Ye email pehle se technician mein hai"); return;
+  }
+
+  try{
+    // Confirm that the Service Center session is still valid.
+    const {data: sessionData, error: sessionError} =
+      await supabaseClient.auth.getSession();
+
+    if(sessionError) throw sessionError;
+    if(!sessionData?.session){
+      showToast("⚠ Login session expire ho gaya");
+      return;
+    }
+
+    showToast("⏳ Technician account ban raha hai...");
+
+    const functionUrl =
+      `${SUPABASE_URL}/functions/v1/create-technician-v2`;
+
+    /*
+      IMPORTANT CORS FIX:
+      Do not send Authorization/apikey headers here.
+      The Edge Function has JWT verification disabled and uses its
+      server-side service-role key. Sending custom headers causes the
+      browser to perform a CORS preflight, which was producing
+      "Failed to fetch" in the mobile browser.
+
+      text/plain is a CORS-safelisted Content-Type, while the Edge
+      Function still reads the body with req.json().
+    */
+    const functionResponse = await fetch(functionUrl, {
+  method: "POST",
+  mode: "cors",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${sessionData.session.access_token}`
+  },
+      body: JSON.stringify({
+        name,
+        phone,
+        email,
+        password,
+        notes,
+        service_center_id: currentServiceCenter.id
+      })
+    });
+
+    const responseText = await functionResponse.text();
+
+    let result = null;
+    try{
+      result = responseText ? JSON.parse(responseText) : null;
+    }catch(_json){
+      result = null;
+    }
+
+    if(!functionResponse.ok){
+      throw new Error(
+        result?.error ||
+        result?.message ||
+        responseText ||
+        `Edge Function HTTP ${functionResponse.status}`
+      );
+    }
+
+    if(!result?.success){
+      throw new Error(
+        result?.error ||
+        result?.message ||
+        "Technician create failed"
+      );
+    }
+
+    const created = result.technician || {};
+
+    DB.technicians.push({
+      id: created.id || uid(),
+      name: created.name || name,
+      phone: created.phone || phone,
+      email: created.email || email,
+      notes,
+      auth_user_id: created.auth_user_id || null,
+      technician_code: created.technician_code || ""
+    });
+
+    await saveDB();
+
+    ['tech_name','tech_phone','tech_email','tech_password','tech_notes'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.value='';
+    });
+
+    renderAll();
+    showToast("✓ Technician login account successfully create ho gaya");
+  }catch(e){
+    console.error("Technician creation failed", e);
+    showToast("⚠ " + (e.message || "Technician create nahi hua"));
+  }
+}
+
+/* =========================================================
+   RENDERERS
+   ========================================================= */
+function fmtDate(d){
+  if(!d) return '';
+  const parts = d.split('-');
+  if(parts.length===3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  return d;
+}
+function emptyRow(colspan, msg){
+  return `<tbody><tr><td colspan="${colspan}"><div class="empty"><div class="big">—</div>${escapeHtml(msg)}</div></td></tr></tbody>`;
+}
+
+function renderStatCards(){
+  const centerFresh = calcCenterFresh();
+  const centerDef = calcCenterDefective();
+  const techFresh = calcTechFresh();
+  const techDef = calcTechDefective();
+  const totalCenterFresh = Object.values(centerFresh).reduce((s,r)=>s+Math.max(r.qty,0),0);
+  const totalCenterDef = Object.values(centerDef).reduce((s,r)=>s+Math.max(r.qty,0),0);
+  const totalTechFresh = Object.values(techFresh).reduce((s,r)=>s+Math.max(r.qty,0),0);
+  const totalTechDef = Object.values(techDef).reduce((s,r)=>s+Math.max(r.qty,0),0);
+  const totalComplaints = new Set(DB.txns.filter(t=>t.type==='use').map(t=>t.complaint)).size;
+
+  const cards = [
+    {num: DB.companies.length, lbl:'Companies', cls:''},
+    {num: totalCenterFresh, lbl:'Center — Fresh', cls:''},
+    {num: totalCenterDef, lbl:'Center — Defective', cls: totalCenterDef>0 ? 'warn':''},
+    {num: totalTechFresh, lbl:'Tech — Fresh', cls:''},
+    {num: totalTechDef, lbl:'Tech — Defective', cls: totalTechDef>0 ? 'danger':''},
+    {num: totalComplaints, lbl:'Complaints Serviced', cls:''}
+  ];
+  document.getElementById('statRow').innerHTML = cards.map(c=>`
+    <div class="stat-card ${c.cls}">
+      <div class="num">${c.num}</div>
+      <div class="lbl">${c.lbl}</div>
+    </div>`).join('');
+}
+
+function renderTechCombinedTable(){
+  const techFilter = document.getElementById('dash_techFilter').value;
+  const companyFilter = document.getElementById('dash_companyFilter').value;
+  let rows = calcTechCombined();
+  if(techFilter) rows = rows.filter(r=>r.tech===techFilter);
+  if(companyFilter) rows = rows.filter(r=>r.company===companyFilter);
+  rows.sort((a,b)=> a.tech.localeCompare(b.tech) || a.company.localeCompare(b.company));
+
+  const el = document.getElementById('techCombinedTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(8,"Kisi technician ke paas stock nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Technician</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Part Name</th><th>Fresh Qty</th><th>Defective Qty</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td><strong>${escapeHtml(r.tech)}</strong></td>
+      <td>${escapeHtml(r.company)}</td>
+      <td>${escapeHtml(r.product||'—')}</td>
+      <td>${escapeHtml(r.model||'—')}</td>
+      <td>${escapeHtml(r.partNo)}</td>
+      <td>${escapeHtml(r.partName||'—')}</td>
+      <td>${r.fresh>0 ? `<span class="pill stock">${r.fresh} Fresh</span>` : '<span class="pill zero">0</span>'}</td>
+      <td>${r.defective>0 ? `<span class="pill defective">${r.defective} Defective</span>` : '<span class="pill zero">0</span>'}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderCenterCombinedTable(){
+  const rows = calcCenterCombined().sort((a,b)=> a.company.localeCompare(b.company) || a.partNo.localeCompare(b.partNo));
+  const el = document.getElementById('centerCombinedTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(7,"Service Center mein abhi koi stock nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Part Name</th><th>Fresh Qty</th><th>Defective Qty</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td>${escapeHtml(r.company)}</td>
+      <td>${escapeHtml(r.product||'—')}</td>
+      <td>${escapeHtml(r.model||'—')}</td>
+      <td>${escapeHtml(r.partNo)}</td>
+      <td>${escapeHtml(r.partName||'—')}</td>
+      <td>${r.fresh>0 ? `<span class="pill stock">${r.fresh} Fresh</span>` : '<span class="pill zero">0</span>'}</td>
+      <td>${r.defective>0 ? `<span class="pill defective">${r.defective} pending</span>` : '<span class="pill zero">0</span>'}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderReceiveTable(){
+  const rows = DB.txns.filter(t=>t.type==='receive').slice().reverse();
+  const el = document.getElementById('receiveTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(9,"Abhi koi entry nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Date</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Part Name</th><th>Qty</th><th>Remarks</th><th></th></tr></thead>
+    <tbody>${rows.map(t=>`<tr>
+      <td>${fmtDate(t.date)}</td><td>${escapeHtml(t.company)}</td><td>${escapeHtml(t.product||'—')}</td><td>${escapeHtml(t.model||'—')}</td><td>${escapeHtml(t.partNo)}</td>
+      <td>${escapeHtml(t.partName||'—')}</td><td>${t.qty}</td><td>${escapeHtml(t.remarks||'—')}</td>
+      <td class="row-actions">
+        <button class="icon-btn edit" onclick="openEditTxnModal('${t.id}')" title="Edit">✎</button>
+        <button class="icon-btn" onclick="deleteTxn('${t.id}')" title="Delete">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderIssueTable(){
+  const rows = DB.txns.filter(t=>t.type==='issue').slice().reverse();
+  const el = document.getElementById('issueTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(9,"Abhi koi entry nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Date</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Technician</th><th>Qty</th><th>Remarks</th><th></th></tr></thead>
+    <tbody>${rows.map(t=>`<tr>
+      <td>${fmtDate(t.date)}</td><td>${escapeHtml(t.company)}</td><td>${escapeHtml(t.product||'—')}</td><td>${escapeHtml(t.model||'—')}</td><td>${escapeHtml(t.partNo)}</td>
+      <td>${escapeHtml(t.tech)}</td><td>${t.qty}</td><td>${escapeHtml(t.remarks||'—')}</td>
+      <td class="row-actions">
+        <button class="icon-btn edit" onclick="openEditTxnModal('${t.id}')" title="Edit">✎</button>
+        <button class="icon-btn" onclick="deleteTxn('${t.id}')" title="Delete">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderUseTable(){
+  const rows = DB.txns.filter(t=>t.type==='use').slice().reverse();
+  const el = document.getElementById('useTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(10,"Abhi koi entry nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Date</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Technician</th><th>Complaint ID</th><th>Customer</th><th>Qty Used</th><th></th></tr></thead>
+    <tbody>${rows.map(t=>`<tr>
+      <td>${fmtDate(t.date)}</td><td>${escapeHtml(t.company)}</td><td>${escapeHtml(t.product||'—')}</td><td>${escapeHtml(t.model||'—')}</td><td>${escapeHtml(t.partNo)}</td>
+      <td>${escapeHtml(t.tech)}</td><td>${escapeHtml(t.complaint)}</td><td>${escapeHtml(t.customer||'—')}</td>
+      <td>${t.qty}</td>
+      <td class="row-actions">
+        <button class="icon-btn edit" onclick="openEditTxnModal('${t.id}')" title="Edit">✎</button>
+        <button class="icon-btn" onclick="deleteTxn('${t.id}')" title="Delete">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderCollectTable(){
+  const rows = DB.txns.filter(t=>t.type==='collect').slice().reverse();
+  const el = document.getElementById('collectTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(9,"Abhi koi entry nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Date</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Technician</th><th>Qty Collected</th><th>Remarks</th><th></th></tr></thead>
+    <tbody>${rows.map(t=>`<tr>
+      <td>${fmtDate(t.date)}</td><td>${escapeHtml(t.company)}</td><td>${escapeHtml(t.product||'—')}</td><td>${escapeHtml(t.model||'—')}</td><td>${escapeHtml(t.partNo)}</td>
+      <td>${escapeHtml(t.tech)}</td><td><span class="pill defective">${t.qty}</span></td><td>${escapeHtml(t.remarks||'—')}</td>
+      <td class="row-actions">
+        <button class="icon-btn edit" onclick="openEditTxnModal('${t.id}')" title="Edit">✎</button>
+        <button class="icon-btn" onclick="deleteTxn('${t.id}')" title="Delete">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderReturnTable(){
+  const rows = DB.txns.filter(t=>t.type==='return' || t.type==='credit').slice().reverse();
+  const el = document.getElementById('returnTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(9,"Abhi koi entry nahi hai"); return; }
+  el.innerHTML = `<thead><tr><th>Date</th><th>Type</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Qty</th><th>RMA / Ref</th><th></th></tr></thead>
+    <tbody>${rows.map(t=>`<tr>
+      <td>${fmtDate(t.date)}</td>
+      <td>${t.type==='return' ? '<span class="pill sent">Sent to Co.</span>' : '<span class="pill credit">Credit Rcvd</span>'}</td>
+      <td>${escapeHtml(t.company)}</td><td>${escapeHtml(t.product||'—')}</td><td>${escapeHtml(t.model||'—')}</td><td>${escapeHtml(t.partNo)}</td><td>${t.qty}</td>
+      <td>${escapeHtml(t.rma||'—')}</td>
+      <td class="row-actions">
+        <button class="icon-btn edit" onclick="openEditTxnModal('${t.id}')" title="Edit">✎</button>
+        <button class="icon-btn" onclick="deleteTxn('${t.id}')" title="Delete">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderStockSummary(){
+  const filterCompany = document.getElementById('ss_companyFilter').value;
+  const filterProduct = document.getElementById('ss_productFilter').value;
+  const filterModel = document.getElementById('ss_modelFilter').value;
+  const centerFresh = calcCenterFresh();
+  const centerDef = calcCenterDefective();
+  const techFresh = calcTechFresh();
+  const techDef = calcTechDefective();
+  const sent = calcTotalSent();
+  const credit = calcTotalCredit();
+
+  const keys = new Set([...Object.keys(centerFresh), ...Object.keys(centerDef)]);
+  let rows = [...keys].map(k=>{
+    const [company, partNo] = k.split('|');
+    const partName = centerFresh[k]?.partName || centerDef[k]?.partName || partNameLookup(company,partNo);
+    const product = centerFresh[k]?.product || centerDef[k]?.product || productLookup(company,partNo);
+    const model = centerFresh[k]?.model || centerDef[k]?.model || modelLookup(company,partNo);
+    const techFreshForThis = Object.values(techFresh).filter(r=>r.company===company && r.partNo===partNo && r.qty>0);
+    const techDefForThis = Object.values(techDef).filter(r=>r.company===company && r.partNo===partNo && r.qty>0);
+    return {
+      company, partNo, partName, product, model,
+      techFreshQty: techFreshForThis.reduce((s,r)=>s+r.qty,0),
+      techDefQty: techDefForThis.reduce((s,r)=>s+r.qty,0),
+      centerFresh: Math.max(centerFresh[k]?.qty||0,0),
+      centerDef: Math.max(centerDef[k]?.qty||0,0),
+      sent: sent[k]||0,
+      credit: credit[k]||0
+    };
+  }).filter(r=> !filterCompany || r.company===filterCompany)
+    .filter(r=> !filterProduct || r.product===filterProduct)
+    .filter(r=> !filterModel || (r.model||'')===filterModel)
+    .filter(r=> r.techFreshQty>0 || r.techDefQty>0 || r.centerFresh>0 || r.centerDef>0 || r.sent>0 || r.credit>0)
+    .sort((a,b)=> a.company.localeCompare(b.company) || a.partNo.localeCompare(b.partNo));
+
+  const el = document.getElementById('stockSummaryTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(10,"Is filter mein koi data nahi hai"); return; }
+  el.innerHTML = `<thead><tr>
+      <th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Part Name</th>
+      <th>Tech — Fresh</th><th>Tech — Defective</th>
+      <th>Center — Fresh</th><th>Center — Defective</th>
+      <th>Sent to Co.</th>
+    </tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td>${escapeHtml(r.company)}</td><td>${escapeHtml(r.product||'—')}</td><td>${escapeHtml(r.model||'—')}</td><td>${escapeHtml(r.partNo)}</td><td>${escapeHtml(r.partName||'—')}</td>
+      <td>${r.techFreshQty>0 ? `<span class="pill stock">${r.techFreshQty}</span>` : '0'}</td>
+      <td>${r.techDefQty>0 ? `<span class="pill defective">${r.techDefQty}</span>` : '0'}</td>
+      <td>${r.centerFresh>0 ? `<span class="pill stock">${r.centerFresh}</span>` : '0'}</td>
+      <td>${r.centerDef>0 ? `<span class="pill defective">${r.centerDef}</span>` : '0'}</td>
+      <td>${r.sent}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+const TYPE_LABEL = {
+  receive: {label:'Received', cls:'stock'},
+  issue: {label:'Issued', cls:'issued'},
+  use: {label:'Used', cls:'used'},
+  collect: {label:'Collected', cls:'defective'},
+  return: {label:'Sent to Co.', cls:'sent'},
+  credit: {label:'Credit', cls:'credit'}
+};
+
+function renderFullLog(){
+  const fc = document.getElementById('log_company').value;
+  const ft = document.getElementById('log_type').value;
+  let rows = DB.txns.slice().sort((a,b)=> b.createdAt - a.createdAt);
+  if(fc) rows = rows.filter(t=>t.company===fc);
+  if(ft) rows = rows.filter(t=>t.type===ft);
+
+  const el = document.getElementById('fullLogTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(10,"Koi transaction nahi mila"); return; }
+  el.innerHTML = `<thead><tr><th>Date</th><th>Type</th><th>Company</th><th>Product</th><th>Model</th><th>Part No.</th><th>Part Name</th><th>Technician</th><th>Qty</th><th></th></tr></thead>
+    <tbody>${rows.map(t=>{
+      const tl = TYPE_LABEL[t.type];
+      return `<tr>
+        <td>${fmtDate(t.date)}</td>
+        <td><span class="pill ${tl.cls}">${tl.label}</span></td>
+        <td>${escapeHtml(t.company)}</td>
+        <td>${escapeHtml(t.product||'—')}</td>
+        <td>${escapeHtml(t.model||'—')}</td>
+        <td>${escapeHtml(t.partNo)}</td>
+        <td>${escapeHtml(t.partName||'—')}</td>
+        <td>${escapeHtml(t.tech||'—')}</td>
+        <td>${t.qty}</td>
+        <td class="row-actions">
+          <button class="icon-btn edit" onclick="openEditTxnModal('${t.id}')" title="Edit">✎</button>
+          <button class="icon-btn" onclick="deleteTxn('${t.id}')" title="Delete">✕</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+function renderCompanyTable(){
+  const el = document.getElementById('companyTable');
+  if(DB.companies.length===0){ el.innerHTML = emptyRow(5,"Koi company add nahi hui abhi"); return; }
+  el.innerHTML = `<thead><tr><th>Company</th><th>Contact Person</th><th>Phone</th><th>Notes</th><th></th></tr></thead>
+    <tbody>${DB.companies.map(c=>`<tr>
+      <td><strong>${escapeHtml(c.name)}</strong></td><td>${escapeHtml(c.contact||'—')}</td>
+      <td>${escapeHtml(c.phone||'—')}</td><td>${escapeHtml(c.notes||'—')}</td>
+      <td><button class="icon-btn" onclick="deleteCompany('${c.id}')" title="Delete">✕</button></td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderCatalogTable(){
+  const filterCompany = document.getElementById('cat_companyFilter').value;
+  let rows = DB.catalog.slice();
+  if(filterCompany) rows = rows.filter(c=>c.company===filterCompany);
+  rows.sort((a,b)=> a.company.localeCompare(b.company) || a.product.localeCompare(b.product) || (a.model||'').localeCompare(b.model||'') || a.partNo.localeCompare(b.partNo));
+
+  const el = document.getElementById('catalogTable');
+  if(rows.length===0){ el.innerHTML = emptyRow(6,"Catalog khaali hai — upar form se part add karein"); return; }
+  el.innerHTML = `<thead><tr><th>Company</th><th>Product</th><th>Product Model</th><th>Part Number</th><th>Part Name</th><th></th></tr></thead>
+    <tbody>${rows.map(c=>`<tr>
+      <td>${escapeHtml(c.company)}</td><td>${escapeHtml(c.product)}</td><td>${escapeHtml(c.model||'—')}</td><td>${escapeHtml(c.partNo)}</td><td>${escapeHtml(c.partName)}</td>
+      <td><button class="icon-btn" onclick="deleteCatalogItem('${c.id}')" title="Delete">✕</button></td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderTechnicianTable(){
+  const el = document.getElementById('technicianTable');
+  if(DB.technicians.length===0){ el.innerHTML = emptyRow(5,"Koi technician add nahi hua abhi"); return; }
+  el.innerHTML = `<thead><tr><th>Technician Name</th><th>Phone</th><th>Login Email</th><th>Login</th><th>Action</th></tr></thead>
+    <tbody>${DB.technicians.map(t=>`<tr>
+      <td><strong>${escapeHtml(t.name)}</strong></td><td>${escapeHtml(t.phone||'—')}</td><td>${escapeHtml(t.email||'—')}</td>
+      <td>${t.auth_user_id?'<span class="badge" style="background:#e7f4eb;color:#24633c">Active</span>':'<span class="badge" style="background:#fff2d9;color:#8a5a00">Not linked</span>'}</td>
+      <td><button class="icon-btn" onclick="openTechnicianAuthModal('${t.id}')" title="Edit / Reset Login">✎</button> <button class="icon-btn" onclick="deleteTechnician('${t.id}')" title="Delete">✕</button></td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function exportCSV(){
+  if(DB.txns.length===0){ showToast("Export karne ke liye koi data nahi hai"); return; }
+  const headers = ['id','type','date','company','product','model','partNo','partName','tech','complaint','customer','qty','rma','remarks'];
+  const lines = [headers.join(',')];
+  DB.txns.forEach(t=>{
+    const row = headers.map(h=>{
+      let v = t[h] ?? '';
+      v = String(v).replace(/"/g,'""');
+      return /[,"\n]/.test(v) ? `"${v}"` : v;
+    });
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inventory_log_${todayStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("✓ CSV download ho gayi");
+}
+
+function renderHeaderMeta(){
+  const el = document.getElementById('headerMeta');
+  const now = new Date();
+  el.innerHTML = `
+    <div>${escapeHtml(currentServiceCenter?.name || '')}</div>
+    <div style="margin-top:4px">${escapeHtml(currentUser?.email || '')}</div>
+    <button onclick="signOutUser()" style="margin-top:7px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.55);border-radius:6px;padding:5px 10px;font-size:.75rem;cursor:pointer">Logout</button>
+  `;
+}
+
+/* =========================================================
+   MASTER RENDER & INIT
+   ========================================================= */
+
+/* =========================================================
+   COMPLAINT MANAGEMENT
+   ========================================================= */
+let complaintPage = 1;
+
+function fileToDataURL(file, maxBytes=1800000){
+  return new Promise((resolve,reject)=>{
+    if(!file){ resolve(null); return; }
+    if(file.size > maxBytes){
+      reject(new Error("File 800 KB se chhoti rakhein (HTML-only backup mode)."));
+      return;
+    }
+    const r = new FileReader();
+    r.onload = ()=>resolve({
+      name:file.name,
+      type:file.type || "application/octet-stream",
+      size:file.size,
+      data:r.result
+    });
+    r.onerror = ()=>reject(new Error("File read nahi ho payi."));
+    r.readAsDataURL(file);
+  });
+}
+
+function fillComplaintSelects(){
+  const company = document.getElementById('cp_company');
+  const tech = document.getElementById('cp_tech');
+  const techFilter = document.getElementById('cp_techFilter');
+
+  if(company){
+    const current=company.value;
+    company.innerHTML='<option value="">Company select karein</option>'+
+      DB.companies.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+    company.value=current;
+  }
+
+  if(tech){
+    const current=tech.value;
+    tech.innerHTML='<option value="">Technician select karein</option>'+
+      DB.technicians.map(t=>{
+        const stableId=t.id || t.technician_id || t.auth_user_id || t.email || t.phone || t.name;
+        return `<option value="${escapeHtml(String(stableId))}">${escapeHtml(t.name||'Technician')}</option>`;
+      }).join('');
+    tech.value=current;
+  }
+
+  if(techFilter){
+    const current=techFilter.value;
+    techFilter.innerHTML='<option value="">All Technicians</option>'+
+      DB.technicians.map(t=>`<option value="${escapeHtml(t.name||'')}">${escapeHtml(t.name||'')}</option>`).join('');
+    techFilter.value=current;
+  }
+}
+
+async function submitComplaint(){
+  const company=document.getElementById('cp_company').value;
+  const number=document.getElementById('cp_number').value.trim();
+  const customer=document.getElementById('cp_customer').value.trim();
+  const mobile=document.getElementById('cp_mobile').value.trim();
+  const address=document.getElementById('cp_address').value.trim();
+  const product=document.getElementById('cp_product').value.trim();
+  const model=document.getElementById('cp_model').value.trim();
+  const selectedTechId=document.getElementById('cp_tech').value;
+  const remark=document.getElementById('cp_remark').value.trim();
+  const file=document.getElementById('cp_file').files[0];
+
+  if(!company){showToast("⚠ Company chunein");return;}
+  if(!number){showToast("⚠ Company Complaint Number bharein");return;}
+  if(!selectedTechId){showToast("⚠ Technician chunein");return;}
+
+  if(DB.complaints.some(c=>String(c.companyComplaintNo||'').toLowerCase()===number.toLowerCase())){
+    showToast("⚠ Ye complaint number pehle se maujood hai");return;
+  }
+
+  if(!currentServiceCenter || !supabaseClient){
+    showToast("⚠ Service Center database session available nahi hai");
+    return;
+  }
+
+  const selectedTech=DB.technicians.find(t=>{
+    const id=t.id || t.technician_id || t.auth_user_id || t.email || t.phone || t.name;
+    return String(id)===String(selectedTechId);
+  });
+
+  if(!selectedTech){
+    showToast("⚠ Technician record nahi mila. Technician list refresh karein.");
+    return;
+  }
+
+  let attachment=null;
+  try{
+    attachment=await fileToDataURL(file);
+  }catch(e){
+    showToast("⚠ "+e.message);
+    return;
+  }
+
+  try{
+    const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+    if(sessionError) throw sessionError;
+    if(!sessionData?.session){
+      showToast("⚠ Login session expire ho gaya");
+      return;
+    }
+
+    const complaint={
+      id:uid(),
+      serviceCenterRef:"SC-"+Date.now().toString().slice(-8),
+      companyComplaintNo:number,
+      company,
+      customer,
+      mobile,
+      address,
+      product,
+      model,
+
+      // Stable technician identity
+      technician:selectedTech.name || "",
+      technician_id:selectedTech.id || selectedTech.technician_id || null,
+      technician_auth_user_id:selectedTech.auth_user_id || null,
+      technician_code:selectedTech.technician_code || null,
+      technician_name:selectedTech.name || "",
+      technician_email:selectedTech.email || null,
+      technician_phone:selectedTech.phone || null,
+
+      status:"ASSIGNED",
+      allocationRemark:remark,
+      technicianRemark:"",
+      closeRemark:"",
+      cancelRemark:"",
+      attachments:attachment ? [attachment] : [],
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      closedAt:null,
+      cancelledAt:null
+    };
+
+    showToast("⏳ Complaint database me allocate ho rahi hai...");
+
+    const response=await fetch(
+      `${SUPABASE_URL}/functions/v1/manage-complaint-sync`,
+      {
+        method:"POST",
+        mode:"cors",
+        headers:{
+          "Content-Type":"application/json",
+          "apikey":SUPABASE_ANON_KEY,
+          "Authorization":`Bearer ${sessionData.session.access_token}`
+        },
+        body:JSON.stringify({
+          action:"allocate",
+          complaint
+        })
+      }
+    );
+
+    const responseText=await response.text();
+    let result={};
+
+    try{
+      result=responseText?JSON.parse(responseText):{};
+    }catch(_){
+      result={};
+    }
+
+    if(!response.ok || !result.success){
+      throw new Error(
+        result.error ||
+        result.message ||
+        responseText ||
+        `Edge Function HTTP ${response.status}`
+      );
+    }
+
+    // Only update local DB AFTER server confirms the allocation.
+    const savedComplaint=result.complaint || complaint;
+
+    const oldIndex=DB.complaints.findIndex(
+      c=>String(c.id)===String(savedComplaint.id)
+    );
+
+    if(oldIndex>=0){
+      DB.complaints[oldIndex]=savedComplaint;
+    }else{
+      DB.complaints.unshift(savedComplaint);
+    }
+
+    await saveDB();
+
+    ['cp_number','cp_customer','cp_mobile','cp_address','cp_product','cp_model','cp_remark']
+      .forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.value='';
+      });
+
+    document.getElementById('cp_file').value='';
+    document.getElementById('cp_tech').value='';
+
+    showToast("✓ Complaint technician ko successfully allocate ho gayi");
+    renderAll();
+
+  }catch(e){
+    console.error("Complaint allocation failed:",e);
+    showToast("⚠ Allocation failed: "+(e.message||"Unknown error"));
+  }
+}
+
+function complaintAction(id, action){
+  const c=DB.complaints.find(x=>x.id===id);
+  if(!c) return;
+  if(action==='close'){
+    const remark=prompt("Complaint close karne ka remark likhein:", c.technicianRemark||"");
+    if(remark===null)return;
+    c.technicianRemark=remark;
+    c.closeRemark=remark;
+    c.status="CLOSED";
+    c.closedAt=new Date().toISOString();
+  }else if(action==='cancel'){
+    const remark=prompt("Complaint cancel karne ka reason likhein:", "");
+    if(remark===null)return;
+    c.cancelRemark=remark;
+    c.status="CANCELLED";
+    c.cancelledAt=new Date().toISOString();
+  }else if(action==='progress'){
+    c.status="IN PROGRESS";
+  }
+  c.updatedAt=new Date().toISOString();
+  saveDB(); renderAll();
+}
+
+function downloadComplaintAttachment(id, index){
+  const c=DB.complaints.find(x=>x.id===id);
+  const a=c?.attachments?.[index];
+  if(!a?.data)return;
+  const link=document.createElement('a');
+  link.href=a.data; link.download=a.name || 'complaint-file';
+  document.body.appendChild(link); link.click(); link.remove();
+}
+
+function renderComplaintTable(){
+  const table=document.getElementById('complaintTable');
+  if(!table)return;
+  const status=document.getElementById('cp_statusFilter')?.value||"";
+  const tech=document.getElementById('cp_techFilter')?.value||"";
+  let rows=(DB.complaints||[]).filter(c=>(!status||c.status===status)&&(!tech||c.technician===tech));
+  rows.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  const sizeVal=document.getElementById('cp_pageSize')?.value||"10";
+  const size=sizeVal==='all'?rows.length:parseInt(sizeVal,10)||10;
+  const totalPages=Math.max(1,Math.ceil(rows.length/size));
+  if(complaintPage>totalPages) complaintPage=totalPages;
+  const start=(complaintPage-1)*size;
+  const pageRows=sizeVal==='all'?rows:rows.slice(start,start+size);
+
+  table.innerHTML=`<thead><tr>
+    <th>Complaint No.</th><th>Company</th><th>Customer</th><th>Technician</th>
+    <th>Status</th><th>Documents</th><th>Remark</th><th>Action</th>
+  </tr></thead><tbody>${
+    pageRows.map(c=>`<tr>
+      <td><b>${escapeHtml(c.companyComplaintNo)}</b><br><small>${escapeHtml(c.serviceCenterRef||'')}</small></td>
+      <td>${escapeHtml(c.company||'')}</td>
+      <td>${escapeHtml(c.customer||'')}<br><small>${escapeHtml(c.mobile||'')}</small></td>
+      <td>${escapeHtml(c.technician||'')}</td>
+      <td><b>${escapeHtml(c.status||'ASSIGNED')}</b></td>
+      <td>${(c.attachments||[]).map((a,i)=>`<button class="btn secondary" style="padding:4px 7px;margin:2px" onclick="downloadComplaintAttachment('${c.id}',${i})">📎 ${escapeHtml(a.name)}</button>`).join('')||'-'}</td>
+      <td>${escapeHtml(c.closeRemark||c.cancelRemark||c.technicianRemark||c.allocationRemark||'')}</td>
+      <td>
+        ${c.status!=='CLOSED'&&c.status!=='CANCELLED'?`
+          <button class="btn secondary" style="padding:4px 7px" onclick="complaintAction('${c.id}','progress')">In Progress</button>
+          <button class="btn" style="padding:4px 7px" onclick="complaintAction('${c.id}','close')">Close</button>
+          <button class="btn danger" style="padding:4px 7px" onclick="complaintAction('${c.id}','cancel')">Cancel</button>
+        `:'-'}
+      </td>
+    </tr>`).join('')
+  }</tbody>`;
+
+  const pager=document.getElementById('complaintPager');
+  if(pager){
+    pager.innerHTML='';
+    if(totalPages>1){
+      const prev=document.createElement('button'); prev.textContent='‹'; prev.disabled=complaintPage===1;
+      prev.onclick=()=>{complaintPage--;renderComplaintTable();};
+      pager.appendChild(prev);
+      for(let p=Math.max(1,complaintPage-2);p<=Math.min(totalPages,complaintPage+2);p++){
+        const b=document.createElement('button');b.textContent=p;b.className=p===complaintPage?'active':'';
+        b.onclick=()=>{complaintPage=p;renderComplaintTable();};pager.appendChild(b);
+      }
+      const next=document.createElement('button');next.textContent='›';next.disabled=complaintPage===totalPages;
+      next.onclick=()=>{complaintPage++;renderComplaintTable();};pager.appendChild(next);
+      const info=document.createElement('span');info.className='page-info';
+      info.textContent=`${rows.length} entries`;pager.appendChild(info);
+    }
+  }
+}
+
+function applyGlobalPagination(){
+  document.querySelectorAll('.tabpanel table').forEach(table=>{
+    if(table.id==='complaintTable') return;
+    const parent=table.parentElement?.parentElement;
+    if(!parent)return;
+    let pager=parent.querySelector('.auto-pager');
+    if(!pager){
+      pager=document.createElement('div');pager.className='pager auto-pager';parent.appendChild(pager);
+    }
+    const selectId='pageSize_'+table.id;
+    let sel=parent.querySelector('.auto-page-size');
+    if(!sel){
+      const wrap=document.createElement('div');
+      wrap.style.cssText='display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:8px 0';
+      wrap.innerHTML=`<label style="font-size:.8rem;color:#666">Show</label><select class="auto-page-size" id="${selectId}" style="padding:5px 7px"><option>10</option><option>20</option><option>50</option><option>100</option><option value="all">All</option></select>`;
+      parent.insertBefore(wrap,table.parentElement);
+      sel=wrap.querySelector('select');
+      sel.addEventListener('change',()=>paginateTable(table, pager, sel.value));
+    }
+    paginateTable(table,pager,sel.value||'10');
+  });
+}
+
+function paginateTable(table,pager,sizeVal){
+  const tbody=table.tBodies?.[0];
+  if(!tbody){pager.innerHTML='';return;}
+  const rows=Array.from(tbody.rows);
+  const size=sizeVal==='all'?rows.length:parseInt(sizeVal,10)||10;
+  const pages=Math.max(1,Math.ceil(rows.length/size));
+  let state=table._pageState||1;
+  if(state>pages)state=pages;
+  table._pageState=state;
+  rows.forEach((r,i)=>r.style.display=(sizeVal==='all'||(i>=(state-1)*size&&i<state*size))?'':'none');
+  pager.innerHTML='';
+  if(pages<=1)return;
+  const prev=document.createElement('button');prev.textContent='‹';prev.disabled=state===1;
+  prev.onclick=()=>{table._pageState=state-1;paginateTable(table,pager,sizeVal)};pager.appendChild(prev);
+  for(let p=Math.max(1,state-2);p<=Math.min(pages,state+2);p++){
+    const b=document.createElement('button');b.textContent=p;b.className=p===state?'active':'';
+    b.onclick=()=>{table._pageState=p;paginateTable(table,pager,sizeVal)};pager.appendChild(b);
+  }
+  const next=document.createElement('button');next.textContent='›';next.disabled=state===pages;
+  next.onclick=()=>{table._pageState=state+1;paginateTable(table,pager,sizeVal)};pager.appendChild(next);
+}
+
+
+/* =========================================================
+   COMPLETE LANGUAGE SWITCHER
+   English <-> Hindi for static UI, dynamic tables, messages,
+   placeholders, option text and titles.
+   ========================================================= */
+const I18N = {
+  "Spare Parts Inventory": {
+    "en": "Spare Parts Inventory",
+    "hi": "स्पेयर पार्ट्स इन्वेंटरी"
+  },
+  "Warranty Service Center · Multi-Company Tracking": {
+    "en": "Warranty Service Center · Multi-Company Tracking",
+    "hi": "वारंटी सर्विस सेंटर · मल्टी-कंपनी ट्रैकिंग"
+  },
+  "Language": {
+    "en": "Language",
+    "hi": "भाषा"
+  },
+  "English": {
+    "en": "English",
+    "hi": "English"
+  },
+  "हिंदी": {
+    "en": "Hindi",
+    "hi": "हिंदी"
+  },
+  "Dashboard": {
+    "en": "Dashboard",
+    "hi": "डैशबोर्ड"
+  },
+  "Part Received": {
+    "en": "Part Received",
+    "hi": "पार्ट प्राप्त"
+  },
+  "Issue to Technician": {
+    "en": "Issue to Technician",
+    "hi": "टेक्नीशियन को जारी"
+  },
+  "Used on Complaint": {
+    "en": "Used on Complaint",
+    "hi": "शिकायत पर उपयोग"
+  },
+  "Collect from Technician": {
+    "en": "Collect from Technician",
+    "hi": "टेक्नीशियन से जमा"
+  },
+  "Return to Company": {
+    "en": "Return to Company",
+    "hi": "कंपनी को वापस"
+  },
+  "Stock Summary": {
+    "en": "Stock Summary",
+    "hi": "स्टॉक सारांश"
+  },
+  "Full Log": {
+    "en": "Full Log",
+    "hi": "पूरा लॉग"
+  },
+  "Companies": {
+    "en": "Companies",
+    "hi": "कंपनियाँ"
+  },
+  "Catalog": {
+    "en": "Catalog",
+    "hi": "कैटलॉग"
+  },
+  "Complaints": {
+    "en": "Complaints",
+    "hi": "शिकायतें"
+  },
+  "Technicians": {
+    "en": "Technicians",
+    "hi": "टेक्नीशियन"
+  },
+  "Technician ke paas — Fresh + Defective (dono ek saath)": {
+    "en": "Technician Stock — Fresh + Defective (Combined)",
+    "hi": "टेक्नीशियन के पास — Fresh + Defective (दोनों एक साथ)"
+  },
+  "Har technician ke paas kitna Fresh aur kitna Defective hai": {
+    "en": "Fresh and Defective quantity with each technician",
+    "hi": "हर टेक्नीशियन के पास कितना Fresh और कितना Defective है"
+  },
+  "Technician Filter": {
+    "en": "Technician Filter",
+    "hi": "टेक्नीशियन फ़िल्टर"
+  },
+  "Sab Technicians": {
+    "en": "All Technicians",
+    "hi": "सभी टेक्नीशियन"
+  },
+  "Company Filter": {
+    "en": "Company Filter",
+    "hi": "कंपनी फ़िल्टर"
+  },
+  "Sab Companies": {
+    "en": "All Companies",
+    "hi": "सभी कंपनियाँ"
+  },
+  "Service Center ke paas — Fresh + Defective": {
+    "en": "Service Center Stock — Fresh + Defective",
+    "hi": "सर्विस सेंटर के पास — Fresh + Defective"
+  },
+  "Fresh = available in center. Defective = collected from tech, pending return to company": {
+    "en": "Fresh = available at the center. Defective = collected from technician, pending return to company.",
+    "hi": "Fresh = सेंटर में उपलब्ध। Defective = टेक्नीशियन से जमा, कंपनी को वापस करना बाकी।"
+  },
+  "Company se Part Received": {
+    "en": "Part Received from Company",
+    "hi": "कंपनी से पार्ट प्राप्त"
+  },
+  "Jab company se naya stock aaye, yahan entry karein": {
+    "en": "Enter new stock received from the company here.",
+    "hi": "कंपनी से नया स्टॉक आने पर यहाँ एंट्री करें।"
+  },
+  "Date": {
+    "en": "Date",
+    "hi": "तारीख"
+  },
+  "Company": {
+    "en": "Company",
+    "hi": "कंपनी"
+  },
+  "Product": {
+    "en": "Product",
+    "hi": "प्रोडक्ट"
+  },
+  "Product Model": {
+    "en": "Product Model",
+    "hi": "प्रोडक्ट मॉडल"
+  },
+  "Part": {
+    "en": "Part",
+    "hi": "पार्ट"
+  },
+  "Quantity": {
+    "en": "Quantity",
+    "hi": "मात्रा"
+  },
+  "Remarks": {
+    "en": "Remarks",
+    "hi": "टिप्पणी"
+  },
+  "+ Add Entry": {
+    "en": "+ Add Entry",
+    "hi": "+ एंट्री जोड़ें"
+  },
+  "Catalog mein naya part add karein": {
+    "en": "Add a new part to Catalog",
+    "hi": "कैटलॉग में नया पार्ट जोड़ें"
+  },
+  "Recent Received Entries": {
+    "en": "Recent Received Entries",
+    "hi": "हाल की प्राप्त एंट्री"
+  },
+  "Technician ko Part Issue Karein": {
+    "en": "Issue Part to Technician",
+    "hi": "टेक्नीशियन को पार्ट जारी करें"
+  },
+  "Service Center ke Fresh stock se technician ko part diya": {
+    "en": "Issue a part from Service Center Fresh stock to the technician.",
+    "hi": "सर्विस सेंटर के Fresh स्टॉक से टेक्नीशियन को पार्ट दें।"
+  },
+  "Part (Fresh Available)": {
+    "en": "Part (Fresh Available)",
+    "hi": "पार्ट (Fresh उपलब्ध)"
+  },
+  "Technician": {
+    "en": "Technician",
+    "hi": "टेक्नीशियन"
+  },
+  "+ Issue Part": {
+    "en": "+ Issue Part",
+    "hi": "+ पार्ट जारी करें"
+  },
+  "Naya Technician add karein": {
+    "en": "Add a New Technician",
+    "hi": "नया टेक्नीशियन जोड़ें"
+  },
+  "Recent Issue Entries": {
+    "en": "Recent Issue Entries",
+    "hi": "हाल की जारी एंट्री"
+  },
+  "Complaint par Part Use Hua": {
+    "en": "Part Used on Complaint",
+    "hi": "शिकायत पर पार्ट का उपयोग"
+  },
+  "Jaise hi \"Use\" hota hai:": {
+    "en": "When a part is used:",
+    "hi": "जैसे ही \"Use\" होता है:"
+  },
+  "Technician ke Fresh se qty ghatti": {
+    "en": "quantity is deducted from Technician Fresh stock",
+    "hi": "टेक्नीशियन के Fresh स्टॉक से मात्रा घटती है"
+  },
+  "Technician ke Defective mein wahi qty add ho jaati hai": {
+    "en": "the same quantity is added to Technician Defective stock",
+    "hi": "वही मात्रा टेक्नीशियन के Defective स्टॉक में जुड़ जाती है"
+  },
+  "Part (Fresh with Technician)": {
+    "en": "Part (Fresh with Technician)",
+    "hi": "पार्ट (टेक्नीशियन के पास Fresh)"
+  },
+  "Complaint / Job ID": {
+    "en": "Complaint / Job ID",
+    "hi": "शिकायत / जॉब ID"
+  },
+  "Customer Name": {
+    "en": "Customer Name",
+    "hi": "ग्राहक का नाम"
+  },
+  "Qty Used": {
+    "en": "Qty Used",
+    "hi": "उपयोग मात्रा"
+  },
+  "+ Save Usage": {
+    "en": "+ Save Usage",
+    "hi": "+ उपयोग सेव करें"
+  },
+  "Usage History (Complaint-wise)": {
+    "en": "Usage History (Complaint-wise)",
+    "hi": "उपयोग इतिहास (शिकायत अनुसार)"
+  },
+  "Technician se Defective Collect Karein": {
+    "en": "Collect Defective from Technician",
+    "hi": "टेक्नीशियन से Defective जमा करें"
+  },
+  "Jaise hi collect hota hai:": {
+    "en": "When collected:",
+    "hi": "जैसे ही जमा होता है:"
+  },
+  "Technician ke Defective se qty hat jaati hai": {
+    "en": "quantity is deducted from Technician Defective stock",
+    "hi": "टेक्नीशियन के Defective स्टॉक से मात्रा घटती है"
+  },
+  "Service Center ke Defective mein add ho jaati hai": {
+    "en": "the quantity is added to Service Center Defective stock",
+    "hi": "मात्रा सर्विस सेंटर के Defective स्टॉक में जुड़ जाती है"
+  },
+  "Part (Defective with Technician)": {
+    "en": "Part (Defective with Technician)",
+    "hi": "पार्ट (टेक्नीशियन के पास Defective)"
+  },
+  "Qty Collected": {
+    "en": "Qty Collected",
+    "hi": "जमा मात्रा"
+  },
+  "+ Collect from Technician": {
+    "en": "+ Collect from Technician",
+    "hi": "+ टेक्नीशियन से जमा करें"
+  },
+  "Collection History": {
+    "en": "Collection History",
+    "hi": "जमा इतिहास"
+  },
+  "Defective Part Company ko Return": {
+    "en": "Return Defective Part to Company",
+    "hi": "Defective पार्ट कंपनी को वापस करें"
+  },
+  "Jaise hi return hota hai:": {
+    "en": "When returned:",
+    "hi": "जैसे ही वापस किया जाता है:"
+  },
+  "Service Center ke Defective se qty hat jaati hai": {
+    "en": "quantity is deducted from Service Center Defective stock",
+    "hi": "सर्विस सेंटर के Defective स्टॉक से मात्रा घटती है"
+  },
+  "\"Sent to Company\" mein count hoti hai": {
+    "en": "it is counted as \"Sent to Company\"",
+    "hi": "इसे \"Sent to Company\" में गिना जाता है"
+  },
+  "Part (Defective in Service Center)": {
+    "en": "Part (Defective in Service Center)",
+    "hi": "पार्ट (सर्विस सेंटर में Defective)"
+  },
+  "Qty Sent": {
+    "en": "Qty Sent",
+    "hi": "भेजी गई मात्रा"
+  },
+  "RMA / Return Ref No.": {
+    "en": "RMA / Return Ref No.",
+    "hi": "RMA / वापसी संदर्भ नंबर"
+  },
+  "+ Mark as Sent": {
+    "en": "+ Mark as Sent",
+    "hi": "+ भेजा गया दर्ज करें"
+  },
+  "Credit / Replacement Received": {
+    "en": "Credit / Replacement Received",
+    "hi": "क्रेडिट / रिप्लेसमेंट प्राप्त"
+  },
+  "Company se replacement ya credit mile to yahan close karein": {
+    "en": "Record replacement or credit received from the company here.",
+    "hi": "कंपनी से रिप्लेसमेंट या क्रेडिट मिलने पर यहाँ दर्ज करें।"
+  },
+  "Qty Credited": {
+    "en": "Qty Credited",
+    "hi": "क्रेडिट मात्रा"
+  },
+  "+ Save Credit": {
+    "en": "+ Save Credit",
+    "hi": "+ क्रेडिट सेव करें"
+  },
+  "Return / Credit Log": {
+    "en": "Return / Credit Log",
+    "hi": "वापसी / क्रेडिट लॉग"
+  },
+  "Company + Product + Model + Part wise Stock Summary": {
+    "en": "Stock Summary by Company + Product + Model + Part",
+    "hi": "कंपनी + प्रोडक्ट + मॉडल + पार्ट अनुसार स्टॉक सारांश"
+  },
+  "Fresh aur Defective — Technician ke paas aur Service Center dono jagah, ek jagah": {
+    "en": "Fresh and Defective stock at Technician and Service Center, in one view",
+    "hi": "टेक्नीशियन और सर्विस सेंटर दोनों जगह का Fresh और Defective स्टॉक एक जगह"
+  },
+  "Product Filter": {
+    "en": "Product Filter",
+    "hi": "प्रोडक्ट फ़िल्टर"
+  },
+  "Sab Products": {
+    "en": "All Products",
+    "hi": "सभी प्रोडक्ट"
+  },
+  "Model Filter": {
+    "en": "Model Filter",
+    "hi": "मॉडल फ़िल्टर"
+  },
+  "Sab Models": {
+    "en": "All Models",
+    "hi": "सभी मॉडल"
+  },
+  "Poora Transaction Log": {
+    "en": "Full Transaction Log",
+    "hi": "पूरा ट्रांजैक्शन लॉग"
+  },
+  "Har transaction ki history — Edit ✎ ya Delete ✕ kar sakte hain.": {
+    "en": "Transaction history — you can Edit ✎ or Delete ✕ entries.",
+    "hi": "हर ट्रांजैक्शन का इतिहास — Edit ✎ या Delete ✕ कर सकते हैं।"
+  },
+  "Sab": {
+    "en": "All",
+    "hi": "सभी"
+  },
+  "Type": {
+    "en": "Type",
+    "hi": "प्रकार"
+  },
+  "Received": {
+    "en": "Received",
+    "hi": "प्राप्त"
+  },
+  "Issued": {
+    "en": "Issued",
+    "hi": "जारी"
+  },
+  "Used": {
+    "en": "Used",
+    "hi": "उपयोग"
+  },
+  "Collected from Tech": {
+    "en": "Collected from Tech",
+    "hi": "टेक्नीशियन से जमा"
+  },
+  "Sent to Company": {
+    "en": "Sent to Company",
+    "hi": "कंपनी को भेजा"
+  },
+  "Credit Received": {
+    "en": "Credit Received",
+    "hi": "क्रेडिट प्राप्त"
+  },
+  "⭳ Export CSV": {
+    "en": "⭳ Export CSV",
+    "hi": "⭳ CSV एक्सपोर्ट"
+  },
+  "Company Master List": {
+    "en": "Company Master List",
+    "hi": "कंपनी मास्टर सूची"
+  },
+  "Apni saari partner companies yahan add karein": {
+    "en": "Add all partner companies here.",
+    "hi": "अपनी सभी पार्टनर कंपनियाँ यहाँ जोड़ें।"
+  },
+  "Company Name": {
+    "en": "Company Name",
+    "hi": "कंपनी का नाम"
+  },
+  "Contact Person": {
+    "en": "Contact Person",
+    "hi": "संपर्क व्यक्ति"
+  },
+  "Contact Number": {
+    "en": "Contact Number",
+    "hi": "संपर्क नंबर"
+  },
+  "Notes / Return Policy": {
+    "en": "Notes / Return Policy",
+    "hi": "नोट्स / वापसी नीति"
+  },
+  "+ Add Company": {
+    "en": "+ Add Company",
+    "hi": "+ कंपनी जोड़ें"
+  },
+  "Company List": {
+    "en": "Company List",
+    "hi": "कंपनी सूची"
+  },
+  "Naya Part Catalog Mein Add Karein": {
+    "en": "Add New Part to Catalog",
+    "hi": "कैटलॉग में नया पार्ट जोड़ें"
+  },
+  "Company → Product → Product Model → Part set kar dein": {
+    "en": "Set Company → Product → Product Model → Part",
+    "hi": "कंपनी → प्रोडक्ट → प्रोडक्ट मॉडल → पार्ट सेट करें"
+  },
+  "Part Number": {
+    "en": "Part Number",
+    "hi": "पार्ट नंबर"
+  },
+  "Part Name": {
+    "en": "Part Name",
+    "hi": "पार्ट का नाम"
+  },
+  "+ Add to Catalog": {
+    "en": "+ Add to Catalog",
+    "hi": "+ कैटलॉग में जोड़ें"
+  },
+  "Poora Catalog": {
+    "en": "Full Catalog",
+    "hi": "पूरा कैटलॉग"
+  },
+  "Company → Product → Model → Part ki poori list": {
+    "en": "Complete Company → Product → Model → Part list",
+    "hi": "कंपनी → प्रोडक्ट → मॉडल → पार्ट की पूरी सूची"
+  },
+  "Complaint Allocation": {
+    "en": "Complaint Allocation",
+    "hi": "शिकायत आवंटन"
+  },
+  "Company complaint number ko technician ko allocate karein": {
+    "en": "Allocate the company complaint number to a technician.",
+    "hi": "कंपनी का शिकायत नंबर टेक्नीशियन को आवंटित करें।"
+  },
+  "Company Complaint Number *": {
+    "en": "Company Complaint Number *",
+    "hi": "कंपनी शिकायत नंबर *"
+  },
+  "Customer Mobile": {
+    "en": "Customer Mobile",
+    "hi": "ग्राहक मोबाइल"
+  },
+  "Customer Address": {
+    "en": "Customer Address",
+    "hi": "ग्राहक का पता"
+  },
+  "Model": {
+    "en": "Model",
+    "hi": "मॉडल"
+  },
+  "Company Document / Photo": {
+    "en": "Company Document / Photo",
+    "hi": "कंपनी दस्तावेज़ / फोटो"
+  },
+  "HTML-only version: attachment is stored in the complaint record. Large files may be rejected by database limits.": {
+    "en": "HTML-only version: attachment is stored in the complaint record. Large files may be rejected by database limits.",
+    "hi": "HTML-only संस्करण: अटैचमेंट शिकायत रिकॉर्ड में सेव होता है। बड़ी फाइलें डेटाबेस सीमा के कारण अस्वीकार हो सकती हैं।"
+  },
+  "Allocation Remark": {
+    "en": "Allocation Remark",
+    "hi": "आवंटन टिप्पणी"
+  },
+  "+ Allocate Complaint": {
+    "en": "+ Allocate Complaint",
+    "hi": "+ शिकायत आवंटित करें"
+  },
+  "Complaint Register": {
+    "en": "Complaint Register",
+    "hi": "शिकायत रजिस्टर"
+  },
+  "OPEN → ASSIGNED → IN PROGRESS → CLOSED / CANCELLED": {
+    "en": "OPEN → ASSIGNED → IN PROGRESS → CLOSED / CANCELLED",
+    "hi": "OPEN → ASSIGNED → IN PROGRESS → CLOSED / CANCELLED"
+  },
+  "Show": {
+    "en": "Show",
+    "hi": "दिखाएँ"
+  },
+  "All": {
+    "en": "All",
+    "hi": "सभी"
+  },
+  "Status": {
+    "en": "Status",
+    "hi": "स्थिति"
+  },
+  "All Status": {
+    "en": "All Status",
+    "hi": "सभी स्थिति"
+  },
+  "ASSIGNED": {
+    "en": "ASSIGNED",
+    "hi": "ASSIGNED"
+  },
+  "IN PROGRESS": {
+    "en": "IN PROGRESS",
+    "hi": "IN PROGRESS"
+  },
+  "CLOSED": {
+    "en": "CLOSED",
+    "hi": "CLOSED"
+  },
+  "CANCELLED": {
+    "en": "CANCELLED",
+    "hi": "CANCELLED"
+  },
+  "All Technicians": {
+    "en": "All Technicians",
+    "hi": "सभी टेक्नीशियन"
+  },
+  "Technician Master List": {
+    "en": "Technician Master List",
+    "hi": "टेक्नीशियन मास्टर सूची"
+  },
+  "Apne saare technicians yahan add karein": {
+    "en": "Add all technicians here.",
+    "hi": "अपने सभी टेक्नीशियन यहाँ जोड़ें।"
+  },
+  "Technician Name": {
+    "en": "Technician Name",
+    "hi": "टेक्नीशियन का नाम"
+  },
+  "Phone Number": {
+    "en": "Phone Number",
+    "hi": "फोन नंबर"
+  },
+  "Login Email": {
+    "en": "Login Email",
+    "hi": "लॉगिन ईमेल"
+  },
+  "Login Password": {
+    "en": "Login Password",
+    "hi": "लॉगिन पासवर्ड"
+  },
+  "Area / Notes": {
+    "en": "Area / Notes",
+    "hi": "क्षेत्र / नोट्स"
+  },
+  "+ Add Technician": {
+    "en": "+ Add Technician",
+    "hi": "+ टेक्नीशियन जोड़ें"
+  },
+  "Technician List": {
+    "en": "Technician List",
+    "hi": "टेक्नीशियन सूची"
+  },
+  "Confirm": {
+    "en": "Confirm",
+    "hi": "पुष्टि करें"
+  },
+  "Are you sure?": {
+    "en": "Are you sure?",
+    "hi": "क्या आप निश्चित हैं?"
+  },
+  "Cancel": {
+    "en": "Cancel",
+    "hi": "रद्द करें"
+  },
+  "Delete": {
+    "en": "Delete",
+    "hi": "डिलीट करें"
+  },
+  "Edit Entry": {
+    "en": "Edit Entry",
+    "hi": "एंट्री संपादित करें"
+  },
+  "Save Changes": {
+    "en": "Save Changes",
+    "hi": "बदलाव सेव करें"
+  },
+  "Kisi technician ke paas stock nahi hai": {
+    "en": "No technician stock available",
+    "hi": "किसी टेक्नीशियन के पास स्टॉक नहीं है"
+  },
+  "Service Center mein abhi koi stock nahi hai": {
+    "en": "No stock is currently available at the Service Center",
+    "hi": "सर्विस सेंटर में अभी कोई स्टॉक नहीं है"
+  },
+  "Abhi koi entry nahi hai": {
+    "en": "No entries yet",
+    "hi": "अभी कोई एंट्री नहीं है"
+  },
+  "Is filter mein koi data nahi hai": {
+    "en": "No data for this filter",
+    "hi": "इस फ़िल्टर में कोई डेटा नहीं है"
+  },
+  "Koi transaction nahi mila": {
+    "en": "No transaction found",
+    "hi": "कोई ट्रांजैक्शन नहीं मिला"
+  },
+  "Koi company add nahi hui abhi": {
+    "en": "No company has been added yet",
+    "hi": "अभी कोई कंपनी नहीं जोड़ी गई है"
+  },
+  "Catalog khaali hai — upar form se part add karein": {
+    "en": "Catalog is empty — add a part using the form above",
+    "hi": "कैटलॉग खाली है — ऊपर दिए फॉर्म से पार्ट जोड़ें"
+  },
+  "Koi technician add nahi hua abhi": {
+    "en": "No technician has been added yet",
+    "hi": "अभी कोई टेक्नीशियन नहीं जोड़ा गया है"
+  },
+  "Company select karein": {
+    "en": "Select Company",
+    "hi": "कंपनी चुनें"
+  },
+  "Technician select karein": {
+    "en": "Select Technician",
+    "hi": "टेक्नीशियन चुनें"
+  },
+  "-- Pehle Technician add karein --": {
+    "en": "-- Add a Technician first --",
+    "hi": "-- पहले टेक्नीशियन जोड़ें --"
+  },
+  "-- Pehle Catalog add karein --": {
+    "en": "-- Add Catalog first --",
+    "hi": "-- पहले कैटलॉग जोड़ें --"
+  },
+  "-- Koi Model Nahi --": {
+    "en": "-- No Model --",
+    "hi": "-- कोई मॉडल नहीं --"
+  },
+  "-- Koi Model nahi --": {
+    "en": "-- No Model --",
+    "hi": "-- कोई मॉडल नहीं --"
+  },
+  "-- Koi part nahi --": {
+    "en": "-- No Part --",
+    "hi": "-- कोई पार्ट नहीं --"
+  },
+  "-- Koi Fresh stock nahi --": {
+    "en": "-- No Fresh stock --",
+    "hi": "-- कोई Fresh स्टॉक नहीं --"
+  },
+  "-- Fresh stock nahi hai --": {
+    "en": "-- No Fresh stock --",
+    "hi": "-- Fresh स्टॉक नहीं है --"
+  },
+  "-- Stock nahi hai --": {
+    "en": "-- No stock --",
+    "hi": "-- कोई स्टॉक नहीं --"
+  },
+  "-- Defective stock nahi --": {
+    "en": "-- No Defective stock --",
+    "hi": "-- कोई Defective स्टॉक नहीं --"
+  },
+  "-- Koi defective stock nahi --": {
+    "en": "-- No Defective stock --",
+    "hi": "-- कोई Defective स्टॉक नहीं --"
+  },
+  "-- Pehle Catalog mein part add karein --": {
+    "en": "-- Add a part to Catalog first --",
+    "hi": "-- पहले कैटलॉग में पार्ट जोड़ें --"
+  },
+  "Fresh": {
+    "en": "Fresh",
+    "hi": "Fresh"
+  },
+  "Defective": {
+    "en": "Defective",
+    "hi": "Defective"
+  },
+  "pending": {
+    "en": "pending",
+    "hi": "लंबित"
+  },
+  "Sent to Co.": {
+    "en": "Sent to Co.",
+    "hi": "कंपनी को भेजा"
+  },
+  "Credit Rcvd": {
+    "en": "Credit Rcvd",
+    "hi": "क्रेडिट प्राप्त"
+  },
+  "Part No.": {
+    "en": "Part No.",
+    "hi": "पार्ट नंबर"
+  },
+  "Qty": {
+    "en": "Qty",
+    "hi": "मात्रा"
+  },
+  "Customer": {
+    "en": "Customer",
+    "hi": "ग्राहक"
+  },
+  "Complaint No.": {
+    "en": "Complaint No.",
+    "hi": "शिकायत नंबर"
+  },
+  "Documents": {
+    "en": "Documents",
+    "hi": "दस्तावेज़"
+  },
+  "Remark": {
+    "en": "Remark",
+    "hi": "टिप्पणी"
+  },
+  "Action": {
+    "en": "Action",
+    "hi": "कार्रवाई"
+  },
+  "In Progress": {
+    "en": "In Progress",
+    "hi": "प्रगति में"
+  },
+  "Close": {
+    "en": "Close",
+    "hi": "बंद करें"
+  },
+  "Credit": {
+    "en": "Credit",
+    "hi": "क्रेडिट"
+  }
+};
+
+const I18N_WORDS = {
+  "en": {
+    "नया": "Fresh",
+    "दोषपूर्ण": "Defective",
+    "सभी": "All",
+    "कंपनियाँ": "Companies",
+    "कंपनी": "Company",
+    "प्रोडक्ट": "Product",
+    "मॉडल": "Model",
+    "पार्ट": "Part",
+    "पार्ट नंबर": "Part No.",
+    "पार्ट का नाम": "Part Name",
+    "टेक्नीशियन": "Technician",
+    "मात्रा": "Qty",
+    "दिनांक": "Date",
+    "टिप्पणी": "Remarks",
+    "ग्राहक": "Customer",
+    "शिकायत": "Complaint",
+    "स्थिति": "Status",
+    "प्राप्त": "Received",
+    "जारी": "Issued",
+    "उपयोग": "Used",
+    "जमा": "Collected",
+    "लंबित": "pending",
+    "संपादित करें": "Edit",
+    "डिलीट": "Delete",
+    "रद्द करें": "Cancel",
+    "पुष्टि": "Confirm",
+    "बदलाव सेव करें": "Save Changes",
+    "डिफ़ॉल्ट": "Default",
+    "सेंटर": "Center",
+    "शिकायतें": "Complaints",
+    "एंट्री": "Entry",
+    "एंट्रियाँ": "Entries",
+    "फोटो": "Photo",
+    "दस्तावेज़": "Documents"
+  },
+  "hi": {
+    "Fresh": "नया",
+    "Defective": "दोषपूर्ण",
+    "All": "सभी",
+    "Companies": "कंपनियाँ",
+    "Company": "कंपनी",
+    "Product": "प्रोडक्ट",
+    "Model": "मॉडल",
+    "Part": "पार्ट",
+    "Part No.": "पार्ट नंबर",
+    "Part Name": "पार्ट का नाम",
+    "Technician": "टेक्नीशियन",
+    "Qty": "मात्रा",
+    "Quantity": "मात्रा",
+    "Date": "दिनांक",
+    "Remarks": "टिप्पणी",
+    "Customer": "ग्राहक",
+    "Complaint": "शिकायत",
+    "Status": "स्थिति",
+    "Received": "प्राप्त",
+    "Issued": "जारी",
+    "Used": "उपयोग",
+    "Collected": "जमा",
+    "pending": "लंबित",
+    "Edit": "संपादित करें",
+    "Delete": "डिलीट",
+    "Cancel": "रद्द करें",
+    "Confirm": "पुष्टि",
+    "Save Changes": "बदलाव सेव करें",
+    "Default": "डिफ़ॉल्ट",
+    "Center": "सेंटर",
+    "Complaints": "शिकायतें",
+    "Entry": "एंट्री",
+    "Entries": "एंट्रियाँ",
+    "Documents": "दस्तावेज़",
+    "Photo": "फोटो",
+    "Fresh Available": "नया उपलब्ध",
+    "Defective stock": "दोषपूर्ण स्टॉक",
+    "Service Center": "सर्विस सेंटर",
+    "Stock": "स्टॉक",
+    "Company Name": "कंपनी का नाम",
+    "Phone": "फोन",
+    "Notes": "नोट्स",
+    "Action": "कार्रवाई",
+    "Remark": "टिप्पणी",
+    "Type": "प्रकार",
+    "Show": "दिखाएँ",
+    "All Status": "सभी स्थितियाँ",
+    "All Technicians": "सभी टेक्नीशियन",
+    "Complaint No.": "शिकायत नंबर",
+    "Customer Mobile": "ग्राहक मोबाइल",
+    "Customer Address": "ग्राहक का पता",
+    "Allocation Remark": "आवंटन टिप्पणी"
+  }
+};
+
+let currentLanguage = localStorage.getItem("ananta_lang") || "en";
+const i18nTextSource = new WeakMap();
+const i18nAttrSource = new WeakMap();
+
+function i18nTranslateString(source, lang){
+  if(source === undefined || source === null) return source;
+  let s = String(source);
+  const dict = I18N;
+  if(dict[s] && dict[s][lang]) return dict[s][lang];
+
+  const keys = Object.keys(dict).sort((a,b)=>b.length-a.length);
+  keys.forEach(k=>{
+    if(!k || !s.includes(k) || !dict[k][lang]) return;
+    s = s.split(k).join(dict[k][lang]);
+  });
+
+  const words = I18N_WORDS[lang] || {};
+  Object.keys(words).sort((a,b)=>b.length-a.length).forEach(k=>{
+    if(k && s.includes(k)) s = s.split(k).join(words[k]);
+  });
+  return s;
+}
+
+function restoreI18nSource(){
+  document.querySelectorAll('body *').forEach(el=>{
+    const attrs=i18nAttrSource.get(el);
+    if(attrs){
+      ['placeholder','title','aria-label'].forEach(attr=>{
+        if(attrs[attr] !== undefined) el.setAttribute(attr,attrs[attr]);
+      });
+    }
+  });
+
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  const nodes=[];
+  let n;
+  while((n=walker.nextNode())) nodes.push(n);
+  nodes.forEach(node=>{
+    if(node.parentElement?.closest('script,style,#langSelect')) return;
+    if(i18nTextSource.has(node)) node.nodeValue=i18nTextSource.get(node);
+  });
+}
+
+function applyLanguageToDOM(){
+  document.documentElement.lang = currentLanguage === 'hi' ? 'hi' : 'en';
+  document.title = currentLanguage === 'hi'
+    ? 'स्पेयर पार्ट्स इन्वेंटरी — सर्विस सेंटर'
+    : 'Spare Parts Inventory — Service Center';
+
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  const nodes=[];
+  let node;
+  while((node=walker.nextNode())) nodes.push(node);
+
+  nodes.forEach(n=>{
+    const parent=n.parentElement;
+    if(!parent || parent.closest('script,style,#langSelect')) return;
+    if(!i18nTextSource.has(n)) i18nTextSource.set(n,n.nodeValue);
+    n.nodeValue=i18nTranslateString(i18nTextSource.get(n),currentLanguage);
+  });
+
+  document.querySelectorAll('input,textarea,select,button,[title],[aria-label]').forEach(el=>{
+    if(el.id === 'langSelect') return;
+    const attrs=i18nAttrSource.get(el)||{};
+    ['placeholder','title','aria-label'].forEach(attr=>{
+      if(el.hasAttribute(attr) && attrs[attr] === undefined) attrs[attr]=el.getAttribute(attr);
+      if(attrs[attr] !== undefined) el.setAttribute(attr,i18nTranslateString(attrs[attr],currentLanguage));
+    });
+    i18nAttrSource.set(el,attrs);
+  });
+
+  const langSelect=document.getElementById('langSelect');
+  if(langSelect) langSelect.value=currentLanguage;
+}
+
+function setLanguage(lang){
+  currentLanguage = lang === 'hi' ? 'hi' : 'en';
+  localStorage.setItem('ananta_lang',currentLanguage);
+
+  restoreI18nSource();
+
+  if(typeof renderAll === 'function' && DB) renderAll();
+
+  applyLanguageToDOM();
+}
+
+function renderAll(){
+  fillAllCompanySelects();
+  fillAllTechnicianSelects();
+  fillTechFilterDropdown();
+  fillProductFilterDropdown();
+  fillCatalogProductDatalist();
+
+  renderStatCards();
+  renderTechCombinedTable();
+  renderCenterCombinedTable();
+
+  refreshReceiveProductOptions();
+  renderReceiveTable();
+
+  refreshIssueProductOptions();
+  renderIssueTable();
+
+  fillTechDropdownForUse();
+  refreshUsePartOptions();
+  renderUseTable();
+
+  refreshCollectOptions();
+  renderCollectTable();
+
+  refreshReturnPartOptions();
+  refreshCreditPartOptions();
+  renderReturnTable();
+
+  renderStockSummary();
+  renderFullLog();
+  renderCompanyTable();
+  renderCatalogTable();
+  renderTechnicianTable();
+  fillComplaintSelects();
+  renderComplaintTable();
+  renderHeaderMeta();
+  applyGlobalPagination();
+}
+
+function setDefaultDates(){
+  ['r_date','i_date','u_date','cl_date','s_date','c_date'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = todayStr();
+  });
+}
+
+document.getElementById('r_company')?.addEventListener('change', refreshReceiveProductOptions);
+document.getElementById('r_product')?.addEventListener('change', refreshReceiveModelOptions);
+document.getElementById('r_model')?.addEventListener('change', refreshReceivePartOptions);
+document.getElementById('i_company')?.addEventListener('change', refreshIssueProductOptions);
+document.getElementById('i_product')?.addEventListener('change', refreshIssueModelOptions);
+document.getElementById('i_model')?.addEventListener('change', refreshIssuePartOptions);
+document.getElementById('u_company')?.addEventListener('change', ()=>{ fillTechDropdownForUse(); refreshUsePartOptions(); });
+document.getElementById('u_tech')?.addEventListener('change', refreshUsePartOptions);
+document.getElementById('cl_company')?.addEventListener('change', refreshCollectOptions);
+document.getElementById('cl_tech')?.addEventListener('change', refreshCollectOptions);
+document.getElementById('s_company')?.addEventListener('change', refreshReturnPartOptions);
+document.getElementById('c_company')?.addEventListener('change', refreshCreditPartOptions);
+
+async function bootApp(){
+  try{
+    const ok = await initSupabaseAuth();
+    if(!ok) return;
+
+    // Do not render or save inventory until the authenticated Service Center
+    // has been identified and its own app_data row has been loaded.
+    setDefaultDates();
+    await initOnlineDatabase();
+    setLanguage(localStorage.getItem("ananta_lang") || "en");
+    renderAll();
+  }catch(e){
+    console.error("Application startup failed", e);
+    showToast("⚠ App start failed: " + (e.message || "Unknown error"));
+  }
+}
+
+bootApp();
+</script>
+</body>
+</html>
