@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ananta Service Center Management System - Login</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f5f0;color:#243b32;font-family:Segoe UI,system-ui,sans-serif}
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.card{width:100%;max-width:430px;background:#fff;border:1px solid #d9d6c9;border-radius:14px;padding:25px;box-shadow:0 10px 35px rgba(0,0,0,.08)}
+h1{margin:0 0 5px;color:#22453a}.muted{color:#68756f;font-size:13px}label{display:block;margin:13px 0 5px;font-size:13px;font-weight:700}
+input{width:100%;padding:11px;border:1px solid #ccd6d0;border-radius:8px;font:inherit}button{border:0;border-radius:8px;padding:11px 15px;background:#2f5d4f;color:#fff;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6}.role{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.role button{background:#eef4f0;color:#2f5d4f;border:2px solid transparent}.role button.active{background:#2f5d4f;color:#fff;border-color:#2f5d4f}
+.msg{margin-top:13px;font-size:13px;display:none}.msg.show{display:block}.err{color:#a43b32}.ok{color:#2f5d4f}.hidden{display:none!important}.pw{display:flex;gap:6px}.pw input{flex:1}.eye{background:#eef4f0;color:#2f5d4f;padding:8px 11px}.rowline{display:flex;justify-content:flex-end;margin-top:6px}.linkbtn{background:none;color:#2f5d4f;padding:3px;font-weight:700}
+</style>
+<style id="ananta-unified-auth">
+:root{--brand:#2f5d4f;--brand-dark:#173d31;--brand-soft:#e7eeea}
+body{background:#f4f6f4!important;font-family:"Segoe UI","Noto Sans Devanagari",system-ui,sans-serif!important}
+.wrap{position:relative}
+.card{border-color:#dce4df!important;box-shadow:0 10px 35px rgba(23,61,49,.12)!important}
+.ananta-auth-top{position:fixed;top:0;left:0;right:0;background:#173d31;color:#fff;padding:12px 18px;text-align:center;font-weight:700;z-index:2}
+.ananta-patriotic{margin:18px 0;padding:12px;border-radius:10px;background:#e7eeea;color:#173d31;font-size:13px;line-height:1.5;text-align:center}
+.ananta-auth-footer{position:fixed;left:0;right:0;bottom:0;background:#2f5d4f;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:600}
+.ananta-lang{position:absolute;top:16px;right:16px;z-index:5;background:#fff;color:#173d31;border:1px solid #dce4df;border-radius:8px;padding:7px 10px;font-weight:700}
+</style>
+<style id="ananta-auth-strict-theme">
+:root{--brand:#138808;--brand-dark:#000080;--brand-soft:#eaf6e8}
+body{background:#f8faf7!important}
+.ananta-auth-top{background:linear-gradient(90deg,#ff9933 0 33%,#000080 33% 66%,#138808 66%)!important;color:#fff!important;border-bottom:3px solid #138808}
+.ananta-patriotic{background:#eaf6e8!important;color:#000080!important;border-left:4px solid #ff9933;border-right:4px solid #138808}
+button{background:#138808!important}.role button{background:#eaf6e8!important;color:#000080!important}.role button.active{background:#138808!important;color:#fff!important}
+.ananta-auth-footer{background:linear-gradient(90deg,#ff9933 0 33%,#fff 33% 66%,#138808 66%)!important;color:#000080!important;border-top:2px solid #000080}
+</style>
+</head><body><div class="ananta-auth-top">🇮🇳 Ananta Service Center Management System</div><button class="ananta-lang" type="button" onclick="toggleAuthLang()" id="authLangBtn">हिंदी</button><div class="wrap"><div class="card" style="margin-top:45px;margin-bottom:45px">
+<h1 id="authTitle">Ananta Service Center Management System</h1><p class="muted" id="loginTypeLabel">Select Login Type</p>
+<div class="ananta-patriotic" id="patrioticText">ईमानदार सेवा, बेहतर तकनीकी समाधान और देश की प्रगति में हमारा योगदान।</div><div class="role"><button id="serviceRole" class="active" type="button">🏢 Service Center</button><button id="techRole" type="button">🧰 Technician</button><button id="adminRole" type="button">👑 Admin</button></div>
+<div id="loginBox">
+<h3 id="loginTitle">Service Center Login</h3>
+<label>Email</label><input id="loginEmail" type="email" autocomplete="username">
+<label>Password</label><div class="pw"><input id="loginPassword" type="password" autocomplete="current-password"><button type="button" class="eye" onclick="togglePw('loginPassword',this)">👁</button></div>
+<div class="rowline"><button type="button" id="forgotLink" class="linkbtn" onclick="showForgot()">Forgot Password?</button></div><p id="techResetNote" class="muted hidden" style="text-align:right;margin:4px 0 0">Forgot password? Contact service center.</p>
+<br><br><button id="loginBtn" style="width:100%">Login</button>
+</div>
+<div id="forgotBox" class="hidden">
+<hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0">
+<h3>Reset Password</h3>
+<p class="muted">Request a reset link on your registered email.</p>
+<label>Email</label><input id="forgotEmail" type="email" autocomplete="email">
+<br><br><button id="forgotBtn" style="width:100%">Send Reset Link</button>
+<div class="rowline"><button type="button" id="backLoginBtn" class="linkbtn">Back to Login</button></div>
+</div>
+<div id="newPasswordBox" class="hidden">
+<hr style="border:0;border-top:1px solid #e4e7e4;margin:22px 0">
+<h3>Set New Password</h3>
+<label>New Password</label><div class="pw"><input id="newPassword" type="password"><button type="button" class="eye" onclick="togglePw('newPassword',this)">👁</button></div>
+<label>Confirm Password</label><div class="pw"><input id="confirmPassword" type="password"><button type="button" class="eye" onclick="togglePw('confirmPassword',this)">👁</button></div>
+<br><br><button id="resetBtn" style="width:100%">Update Password</button>
+</div>
+<p id="msg" class="msg"></p></div></div><div class="ananta-auth-footer">© <span id="authCopyrightYear"></span> Ananta Enterprises · All Rights Reserved</div>
+<script>
+function openForgotPassword(e){
+  if(e)e.preventDefault();
+  var login=document.getElementById("loginBox");
+  var forgot=document.getElementById("forgotBox");
+  var reset=document.getElementById("newPasswordBox");
+  var email=document.getElementById("forgotEmail");
+  if(login)login.classList.add("hidden");
+  if(reset)reset.classList.add("hidden");
+  if(forgot)forgot.classList.remove("hidden");
+  var le=document.getElementById("loginEmail");
+  if(email && le)email.value=le.value||"";
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+const SUPABASE_URL="https://talzqxwoclrllbqudpkk.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_6H_DB7Z-5ygiX2hvMvQwZQ_ma-o-mQk";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let role="service";
+const ADMIN_EMAIL="ananta.services@yahoo.com";
+const $=id=>document.getElementById(id);
+function msg(text,ok=false){const e=$("msg");e.textContent=text;e.className="msg show "+(ok?"ok":"err")}
+function busy(id,b,label){const e=$(id);e.disabled=b;e.textContent=b?"Please wait…":label}
+function setRole(r){
+  role=r;
+  $("serviceRole").classList.toggle("active",r==="service");
+  $("techRole").classList.toggle("active",r==="technician");
+  if($("adminRole")) $("adminRole").classList.toggle("active",r==="admin");
+
+  $("loginTitle").textContent =
+    r==="service" ? "Service Center Login" :
+    r==="technician" ? "Technician Login" :
+    "Admin Login";
+
+  $("forgotLink").classList.toggle(
+    "hidden",
+    !(r==="service" || r==="admin")
+  );
+
+  $("techResetNote").classList.toggle(
+    "hidden",
+    r!=="technician"
+  );
+
+  $("msg").className="msg";
+  if(window.authApplyLanguage) window.authApplyLanguage();
+}
+
+$("serviceRole").onclick=()=>setRole("service");
+$("techRole").onclick=()=>setRole("technician");
+if($("adminRole")) $("adminRole").onclick=()=>setRole("admin");
+
+function togglePw(id,btn){const e=$(id);e.type=e.type==="password"?"text":"password";btn.textContent=e.type==="password"?"👁":"🙈"}
+function showForgot(){
+  if(role==="technician"){
+    $("msg").textContent="Technician password Service Center hi reset karega. Service Center se contact karein.";
+    $("msg").className="msg show err";
+    return;
+  }
+  openForgotPassword(); $("msg").className="msg";
+}
+function hideForgot(){
+  $("forgotBox").classList.add("hidden");
+  $("newPasswordBox").classList.add("hidden");
+  $("loginBox").classList.remove("hidden");
+  $("msg").className="msg";
+}
+
+async function sendReset(){
+ const email=$("forgotEmail").value.trim().toLowerCase();
+ if(!email)return msg("Registered email bharein.");
+ busy("forgotBtn",true,"Send Reset Link");
+ try{
+   const redirectTo=location.origin+location.pathname;
+   const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+   if(error)throw error;
+   msg("Password reset link email par bhej diya gaya hai.",true);
+ }catch(e){
+   console.error("Password reset failed",e);
+   msg("Reset link nahi bheja gaya: "+(e.message||"Supabase error"));
+ }finally{
+   busy("forgotBtn",false,"Send Reset Link");
+ }
+}
+async function updatePassword(){
+ const p=$("newPassword").value,c=$("confirmPassword").value;
+ if(p.length<6)return msg("Password kam se kam 6 characters ka hona chahiye.");
+ if(p!==c)return msg("Password aur Confirm Password same nahi hain.");
+ busy("resetBtn",true,"Update Password");
+ try{
+   const {error}=await db.auth.updateUser({password:p});
+   if(error)throw error;
+   await db.auth.signOut();
+   $("newPasswordBox").classList.add("hidden");
+   $("loginBox").classList.remove("hidden");
+   msg("Password update ho gaya. Ab login karein.",true);
+ }catch(e){
+   console.error("Password update failed",e);
+   msg("Password update nahi hua: "+(e.message||"Supabase error"));
+ }finally{
+   busy("resetBtn",false,"Update Password");
+ }
+}
+
+async function login(){
+ const email=$("loginEmail").value.trim().toLowerCase(),password=$("loginPassword").value;
+ if(!email||!password)return msg("Email aur password bharein.");
+
+ if(role==="admin" && email!==ADMIN_EMAIL.toLowerCase())
+   return msg("Admin access denied.");
+
+ busy("loginBtn",true,"Login");
+ try{
+   const {data,error}=await db.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   if(!data.session)return msg("Login session nahi mila.");
+   const u=data.user;
+
+   if(role==="admin"){
+     if(String(u.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()){
+       await db.auth.signOut();
+       return msg("Admin access denied.");
+     }
+     localStorage.setItem("ananta_login_role","admin");
+     location.href="admin.html";
+     return;
+   }
+
+   if(role==="technician"){
+     localStorage.setItem("ananta_login_role","technician");
+     location.href="technician.html";
+     return;
+   }
+
+   let meta=Object.assign({},u.user_metadata||{},u.app_metadata||{});
+   let centerId=meta.service_center_id||"",center=null;
+   if(centerId){
+     const r=await db.from("service_centers").select("id,name,service_center_code,is_active").eq("id",centerId).maybeSingle();
+     center=r.data;
+   }
+   if(!center){
+     let r=await db.from("service_centers").select("id,name,service_center_code,is_active").eq("user_id",u.id).maybeSingle();
+     if(!r.data) r=await db.from("service_centers").select("id,name,service_center_code,is_active").eq("owner_user_id",u.id).maybeSingle();
+     center=r.data;
+   }
+   if(!center){await db.auth.signOut();return msg("Service Center account link nahi mila.");}
+   if(center.is_active===false){await db.auth.signOut();return msg("Service Center account disabled hai. Admin se contact karein.");}
+   localStorage.setItem("ananta_login_role","service_center");
+   location.href="index.html";
+ }catch(e){
+   console.error("Login failed",e);
+   msg(e.message||"Login failed");
+ }finally{
+   busy("loginBtn",false,"Login");
+ }
+}
+$("loginBtn").addEventListener("click",login);
+$("forgotBtn").addEventListener("click",sendReset);
+$("resetBtn").addEventListener("click",updatePassword);
+
+$("backLoginBtn").addEventListener("click",function(e){e.preventDefault();hideForgot();});
+
+db.auth.onAuthStateChange(function(event,session){
+  if(event==="PASSWORD_RECOVERY"){
+    if(session && session.user && String(session.user.email||"").toLowerCase()===ADMIN_EMAIL.toLowerCase()) setRole("admin");
+    else setRole("service");
+    $("loginBox").classList.add("hidden");
+    $("forgotBox").classList.add("hidden");
+    $("newPasswordBox").classList.remove("hidden");
+    $("msg").className="msg";
+  }
+});
+setRole("service");
+</script>
+<script id="ananta-auth-language">
+(function(){
+var hi={title:'अनंता सर्विस सेंटर मैनेजमेंट सिस्टम',select:'लॉगिन प्रकार चुनें',service:'सर्विस सेंटर',tech:'टेक्नीशियन',admin:'एडमिन',serviceLogin:'सर्विस सेंटर लॉगिन',email:'ईमेल',password:'पासवर्ड',forgot:'पासवर्ड भूल गए?',login:'लॉगिन',pat:'ईमानदार सेवा, बेहतर तकनीकी समाधान और देश की प्रगति में हमारा योगदान।',reset:'पासवर्ड रीसेट करें',resetText:'अपने रजिस्टर्ड ईमेल पर रीसेट लिंक मंगाएँ।',send:'रीसेट लिंक भेजें',back:'लॉगिन पर वापस जाएँ',newPass:'नया पासवर्ड सेट करें',confirm:'पासवर्ड की पुष्टि करें',update:'पासवर्ड अपडेट करें'};
+var en={title:'Ananta Service Center Management System',select:'Select Login Type',service:'Service Center',tech:'Technician',admin:'Admin',serviceLogin:'Service Center Login',email:'Email',password:'Password',forgot:'Forgot Password?',login:'Login',pat:'Reliable service, better technical solutions, and a contribution to India’s progress.',reset:'Reset Password',resetText:'Request a reset link on your registered email.',send:'Send Reset Link',back:'Back to Login',newPass:'Set New Password',confirm:'Confirm Password',update:'Update Password'};
+function apply(){var hiMode=window.authLang==='hi',x=hiMode?hi:en;document.documentElement.lang=hiMode?'hi':'en';document.title=x.title+' - Login';document.getElementById('authTitle').textContent=x.title;document.getElementById('loginTypeLabel').textContent=x.select;document.getElementById('serviceRole').textContent='🏢 '+x.service;document.getElementById('techRole').textContent='🧰 '+x.tech;document.getElementById('adminRole').textContent='👑 '+x.admin;document.getElementById('loginTitle').textContent=role==='technician'?(hiMode?'टेक्नीशियन लॉगिन':'Technician Login'):role==='admin'?(hiMode?'एडमिन लॉगिन':'Admin Login'):x.serviceLogin;document.querySelectorAll('#loginBox label')[0].textContent=x.email;document.querySelectorAll('#loginBox label')[1].textContent=x.password;document.getElementById('forgotLink').textContent=x.forgot;document.getElementById('loginBtn').textContent=x.login;document.getElementById('patrioticText').textContent=x.pat;document.querySelector('#forgotBox h3').textContent=x.reset;document.querySelector('#forgotBox .muted').textContent=x.resetText;document.getElementById('forgotBtn').textContent=x.send;document.getElementById('backLoginBtn').textContent=x.back;document.querySelector('#newPasswordBox h3').textContent=x.newPass;document.querySelectorAll('#newPasswordBox label')[0].textContent=x.password;document.querySelectorAll('#newPasswordBox label')[1].textContent=x.confirm;document.getElementById('resetBtn').textContent=x.update;document.getElementById('authLangBtn').textContent=hiMode?'English':'हिंदी';}
+window.toggleAuthLang=function(){window.authLang=window.authLang==='hi'?'en':'hi';localStorage.setItem('ananta_auth_lang',window.authLang);apply()};window.authApplyLanguage=apply;window.authLang=localStorage.getItem('ananta_auth_lang')||'en';document.getElementById('authCopyrightYear').textContent=new Date().getFullYear();apply();
+})();
+</script>
+<script id="ananta-auth-strict-language">
+(function(){
+var M={
+ "Password reset link email par bhej diya gaya hai.":{en:"Password reset link sent to your email.",hi:"पासवर्ड रीसेट लिंक आपके ईमेल पर भेज दिया गया है।"},
+ "Reset link nahi bheja gaya: ":{en:"Reset link was not sent: ",hi:"रीसेट लिंक नहीं भेजा गया: "},
+ "Password aur Confirm Password same nahi hain.":{en:"Password and Confirm Password do not match.",hi:"पासवर्ड और पुष्टि पासवर्ड समान नहीं हैं।"},
+ "Password update ho gaya. Ab login karein.":{en:"Password updated. Please log in.",hi:"पासवर्ड अपडेट हो गया। अब लॉगिन करें।"},
+ "Password update nahi hua: ":{en:"Password was not updated: ",hi:"पासवर्ड अपडेट नहीं हुआ: "},
+ "Login session nahi mila.":{en:"Login session not found.",hi:"लॉगिन सेशन नहीं मिला।"},
+ "Service Center account link nahi mila.":{en:"Service Center account link not found.",hi:"सर्विस सेंटर अकाउंट लिंक नहीं मिला।"},
+ "Service Center account disabled hai. Admin se contact karein.":{en:"Service Center account is disabled. Contact the Admin.",hi:"सर्विस सेंटर अकाउंट बंद है। एडमिन से संपर्क करें।"},
+ "Technician password Service Center hi reset karega. Service Center se contact karein.":{en:"The Service Center must reset the technician password. Contact the Service Center.",hi:"टेक्नीशियन का पासवर्ड सर्विस सेंटर ही रीसेट करेगा। सर्विस सेंटर से संपर्क करें।"},
+ "Please wait…":{en:"Please wait…",hi:"कृपया प्रतीक्षा करें…"}
+};
+function tr(s){var l=window.authLang==='hi'?'hi':'en';s=String(s==null?'':s);for(var k in M){if(s===k)return M[k][l];if(s.indexOf(k)===0)return M[k][l]+s.slice(k.length)}return s}
+var oldMsg=window.msg;if(oldMsg)window.msg=function(text,ok){return oldMsg(tr(text),ok)};
+var oldBusy=window.busy;if(oldBusy)window.busy=function(id,b,label){return oldBusy(id,b,tr(label))};
+})();
+</script>
+
+<style id="ananta-index-master-theme">
+:root{--brand:#138808!important;--brand-dark:#000080!important;--brand-soft:#eaf6e8!important}
+html,body{max-width:100%;overflow-x:hidden!important;font-family:"Segoe UI","Noto Sans Devanagari",system-ui,Arial,sans-serif!important;background:linear-gradient(180deg,#fff 0%,#fff 72%,#f7fff7 100%)!important;color:#17202a!important}
+header.top,.top,.ananta-auth-top{background:#fff!important;color:#000080!important;border-top:6px solid #ff9933!important;border-bottom:6px solid #138808!important;box-shadow:0 2px 10px rgba(0,0,0,.06)!important}
+h1,h2,h3{color:#000080!important}
+.card,.panel,.stat,.stat-card,.login{background:#fff!important;border-color:#dce2e8!important;box-shadow:0 2px 12px rgba(0,0,0,.045)!important}
+button,.btn{background:#138808!important;color:#fff!important;border-color:#138808!important;border-radius:7px!important}
+button.secondary,.btn.secondary{background:#fff!important;color:#000080!important;border-color:#000080!important}
+input,select,textarea{background:#fff!important;border-color:#cfd7df!important;border-radius:7px!important}
+input:focus,select:focus,textarea:focus{border-color:#ff9933!important;box-shadow:0 0 0 3px rgba(255,153,51,.16)!important;outline:none!important}
+table thead th{background:linear-gradient(90deg,rgba(255,153,51,.20),rgba(255,255,255,.98),rgba(19,136,8,.18))!important;color:#000080!important;border-bottom:2px solid #000080!important}
+.ananta-green-copyright,.ananta-tech-footer,.ananta-auth-footer{background:linear-gradient(90deg,#ff9933 0 33%,#fff 33% 66%,#138808 66%)!important;color:#000080!important;border-top:2px solid #000080!important;border-bottom:2px solid #000080!important;width:100%!important;box-sizing:border-box!important;white-space:normal!important;text-align:center!important;overflow:hidden!important}
+.ananta-tech-footer,.ananta-auth-footer,.ananta-green-copyright{padding:10px!important;font-size:13px!important;font-weight:600!important}
+.ananta-brand-title,.ananta-system-title-inline,#authTitle{font-weight:800!important;color:#000080!important;text-shadow:1px 1px 0 #d9dee5,2px 2px 0 rgba(0,0,128,.12)!important}
+</style>
+<script>
+(function(){
+ const title='Ananta Service Center Management System';
+ function fix(){
+  document.querySelectorAll('#authTitle,#anantaSystemTitle,#anantaInlineSystemTitle,#anantaDrawerTitle,.ananta-brand-title').forEach(e=>{e.textContent=(localStorage.getItem('ananta_lang')==='hi'||localStorage.getItem('ananta_tech_lang')==='hi')?'अनंता सर्विस सेंटर मैनेजमेंट सिस्टम':title;e.classList.add('ananta-brand-title')});
+  document.querySelectorAll('h1').forEach(e=>{if(/Ananta Service Center Management System/i.test(e.textContent)||/Ananta Service Center Management System/i.test(e.textContent))e.textContent=title});
+  const y=new Date().getFullYear();document.querySelectorAll('[id$="CopyrightYear"]').forEach(e=>e.textContent=y);
+ }
+ fix();new MutationObserver(()=>setTimeout(fix,0)).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+
+</body></html>
